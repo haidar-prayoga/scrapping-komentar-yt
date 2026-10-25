@@ -1,0 +1,8 @@
+# Folder ini menyimpan data mentah hasil crawling YouTube
+# File utama: komentar_raw.csv
+#
+# Kolom yang diharapkan:
+#   komentar  : teks komentar asli
+#   likes     : jumlah likes komentar
+#   tanggal   : waktu komentar diposting
+#   video     : URL video sumber

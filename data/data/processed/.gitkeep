@@ -1,0 +1,9 @@
+# Folder ini menyimpan data bersih hasil preprocessing dan labeling
+# File utama: komentar_clean.csv
+#
+# Kolom yang diharapkan:
+#   komentar        : teks komentar asli
+#   komentar_bersih : teks setelah preprocessing
+#   label           : sentimen (positif / negatif / netral)
+#   likes           : jumlah likes
+#   tanggal         : waktu komentar

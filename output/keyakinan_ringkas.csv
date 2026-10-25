@@ -1,0 +1,3 @@
+model,akurasi,confidence_rata2,confidence_rata2_benar,confidence_rata2_salah,gap_overconfidence,brier_multiclass,ece_10bin
+Naive Bayes,0.600723,0.661012,0.693785,0.611703,0.060289,0.502747,0.071356
+Random Forest,0.573622,0.622242,0.637226,0.602084,0.048620,0.565605,0.068725

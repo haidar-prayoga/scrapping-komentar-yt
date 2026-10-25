@@ -1,0 +1,3 @@
+model,akurasi_mean,akurasi_std,f1_macro_mean,f1_macro_std
+Naive Bayes,0.606241,0.005781,0.365459,0.007271
+Random Forest,0.580250,0.021101,0.535979,0.024974

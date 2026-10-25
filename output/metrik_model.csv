@@ -1,0 +1,4 @@
+,Akurasi,Precision_macro,Recall_macro,F1_macro,Precision_weighted,Recall_weighted,F1_weighted
+Naive Bayes,0.600723,0.421418,0.391237,0.354854,0.555746,0.600723,0.516835
+Random Forest,0.573622,0.513625,0.553881,0.520749,0.610278,0.573622,0.585935
+Naive Bayes (prior seragam),0.617886,0.547790,0.499751,0.512634,0.603286,0.617886,0.605982

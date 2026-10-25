@@ -1,0 +1,12 @@
+youtube-comment-downloader
+pandas
+numpy
+scikit-learn
+PySastrawi
+matplotlib
+seaborn
+wordcloud
+tqdm
+setuptools
+streamlit
+pillow

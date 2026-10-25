@@ -1,0 +1,10 @@
+model,kelas,precision,recall,f1-score,support
+Naive Bayes,negatif,0.672000,0.222812,0.334661,377.000000
+Naive Bayes,netral,0.000000,0.000000,0.000000,119.000000
+Naive Bayes,positif,0.592253,0.950900,0.729899,611.000000
+Random Forest,negatif,0.525886,0.511936,0.518817,377.000000
+Random Forest,netral,0.290323,0.529412,0.375000,119.000000
+Random Forest,positif,0.724665,0.620295,0.668430,611.000000
+Naive Bayes (prior seragam),negatif,0.535912,0.514589,0.525034,377.000000
+Naive Bayes (prior seragam),netral,0.428571,0.226891,0.296703,119.000000
+Naive Bayes (prior seragam),positif,0.678886,0.757774,0.716164,611.000000

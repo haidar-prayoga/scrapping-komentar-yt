@@ -1,0 +1,179 @@
+{
+  "leksikon": {
+    "positif": 3609,
+    "negatif": 6579,
+    "overlap": 1135,
+    "entri_kurang_4_huruf": 187
+  },
+  "koreksi_domain": 0,
+  "sumber": {
+    "video": 13
+  },
+  "data": {
+    "raw": 5733,
+    "setelah_buang_kosong": 5733,
+    "setelah_dedup": 5632,
+    "bersih": 5531,
+    "distribusi": {
+      "positif": 3051,
+      "negatif": 1884,
+      "netral": 596
+    },
+    "distribusi_persen": {
+      "positif": 55.16,
+      "negatif": 34.06,
+      "netral": 10.78
+    },
+    "cakupan_leksikon_persen": 92.15,
+    "netral_tanpa_kata_cocok": 434,
+    "netral_skor_saling_meniadakan": 162
+  },
+  "ablasi_label": {
+    "mode_aktif": "klausa",
+    "persen_berubah": 3.54,
+    "kappa_antar_aturan": 0.9380628762852123,
+    "persen_kontras": 11.55,
+    "persen_campuran": 32.49,
+    "persen_fokus_kreator_per_label": {
+      "negatif": 2.97,
+      "netral": 2.35,
+      "positif": 7.47
+    }
+  },
+  "split": {
+    "latih": 4424,
+    "uji": 1107,
+    "fitur": 5000
+  },
+  "metrik": {
+    "Naive Bayes": {
+      "Akurasi": 0.6007226738934056,
+      "Precision_macro": 0.4214176010873259,
+      "Recall_macro": 0.39123727825121807,
+      "F1_macro": 0.35485361735637017,
+      "Precision_weighted": 0.5557456755131602,
+      "Recall_weighted": 0.6007226738934056,
+      "F1_weighted": 0.516834619369571
+    },
+    "Random Forest": {
+      "Akurasi": 0.5736224028906955,
+      "Precision_macro": 0.513624510399225,
+      "Recall_macro": 0.553880901082144,
+      "F1_macro": 0.520749179799359,
+      "Precision_weighted": 0.6102780462293705,
+      "Recall_weighted": 0.5736224028906955,
+      "F1_weighted": 0.5859349781081964
+    },
+    "Naive Bayes (prior seragam)": {
+      "Akurasi": 0.6178861788617886,
+      "Precision_macro": 0.547789553759969,
+      "Recall_macro": 0.49975125215727695,
+      "F1_macro": 0.5126336953286899,
+      "Precision_weighted": 0.6032861736836073,
+      "Recall_weighted": 0.6178861788617886,
+      "F1_weighted": 0.6059815948117658
+    }
+  },
+  "confusion_matrix": {
+    "urutan_kelas": [
+      "negatif",
+      "netral",
+      "positif"
+    ],
+    "Naive Bayes": [
+      [
+        84,
+        0,
+        293
+      ],
+      [
+        12,
+        0,
+        107
+      ],
+      [
+        29,
+        1,
+        581
+      ]
+    ],
+    "Random Forest": [
+      [
+        193,
+        72,
+        112
+      ],
+      [
+        24,
+        63,
+        32
+      ],
+      [
+        150,
+        82,
+        379
+      ]
+    ],
+    "Naive Bayes (prior seragam)": [
+      [
+        194,
+        15,
+        168
+      ],
+      [
+        41,
+        27,
+        51
+      ],
+      [
+        127,
+        21,
+        463
+      ]
+    ]
+  },
+  "cv": [
+    {
+      "model": "Naive Bayes",
+      "akurasi_mean": 0.6062407648848327,
+      "akurasi_std": 0.005780559594229626,
+      "f1_macro_mean": 0.3654586270982078,
+      "f1_macro_std": 0.007270625859359016
+    },
+    {
+      "model": "Random Forest",
+      "akurasi_mean": 0.5802497635299231,
+      "akurasi_std": 0.021100845934062182,
+      "f1_macro_mean": 0.5359789031560074,
+      "f1_macro_std": 0.024974090345474962
+    }
+  ],
+  "mcnemar": {
+    "b_hanya_NB_benar": 223,
+    "c_hanya_RF_benar": 193,
+    "chi2": 2.0216346153846154,
+    "p_chi2": 0.15507212969828824,
+    "p_exact": 0.15498774091701692,
+    "signifikan_alpha_0_05": false
+  },
+  "keyakinan": {
+    "Naive Bayes": {
+      "akurasi": 0.6007226738934056,
+      "confidence_rata2": 0.6610118359408049,
+      "confidence_rata2_benar": 0.6937853059505997,
+      "confidence_rata2_salah": 0.6117033346817247,
+      "gap_overconfidence": 0.060289162047399314,
+      "brier_multiclass": 0.5027473504504325,
+      "ece_10bin": 0.07135552384023731
+    },
+    "Random Forest": {
+      "akurasi": 0.5736224028906955,
+      "confidence_rata2": 0.6222422049029145,
+      "confidence_rata2_benar": 0.6372257113928871,
+      "confidence_rata2_salah": 0.6020843095191588,
+      "gap_overconfidence": 0.04861980201221894,
+      "brier_multiclass": 0.5656051796803109,
+      "ece_10bin": 0.06872504298222654
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# Folder ini menyimpan semua output program:
+#
+# Grafik:
+#   distribusi_label.png       — Pie chart distribusi sentimen
+#   perbandingan_performa.png  — Bar chart NBC vs Random Forest
+#   confusion_matrix.png       — Confusion matrix kedua model
+#   wordcloud_positif.png      — WordCloud kelas positif
+#   wordcloud_negatif.png      — WordCloud kelas negatif
+#   wordcloud_netral.png       — WordCloud kelas netral
+#
+# Model tersimpan:
+#   model_nbc.pkl              — Naive Bayes Classifier
+#   model_rfc.pkl              — Random Forest Classifier
+#   tfidf_vectorizer.pkl       — TF-IDF Vectorizer
