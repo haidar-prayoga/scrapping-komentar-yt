@@ -136,14 +136,20 @@ st.markdown("""
 # =============================================================================
 # PATH & KONSTANTA
 # =============================================================================
-DIR_OUTPUT    = 'output'
-DIR_PROCESSED = os.path.join('data', 'processed')
-DIR_LEXICON   = os.path.join('data', 'lexicon')
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, BASE_DIR)
+import sentimen_inset as si          # aturan praproses & pelabelan IDENTIK dengan main.py
+
+DIR_OUTPUT    = os.path.join(BASE_DIR, 'output')
+DIR_PROCESSED = os.path.join(BASE_DIR, 'data', 'processed')
+DIR_LEXICON   = os.path.join(BASE_DIR, 'data', 'lexicon')
 
 CLEAN_CSV = os.path.join(DIR_PROCESSED, 'komentar_clean.csv')
 NBC_PKL   = os.path.join(DIR_OUTPUT, 'model_nbc.pkl')
 RFC_PKL   = os.path.join(DIR_OUTPUT, 'model_rfc.pkl')
 TFIDF_PKL = os.path.join(DIR_OUTPUT, 'tfidf_vectorizer.pkl')
+SPLIT_CSV = os.path.join(DIR_PROCESSED, 'split_ids.csv')
+RINGKASAN_JSON = os.path.join(DIR_OUTPUT, 'hasil_ringkasan.json')
 
 COLORS      = {'positif': '#22c55e', 'negatif': '#ef4444', 'netral': '#3b82f6'}
 PALETTE_NBC = '#F39C12'
@@ -171,136 +177,48 @@ def load_models():
 
 
 @st.cache_resource
-def load_lexicon():
-    path_pos = os.path.join(DIR_LEXICON, 'inset_positif.txt')
-    path_neg = os.path.join(DIR_LEXICON, 'inset_negatif.txt')
-    pos_dict, neg_dict = {}, {}
-    if os.path.exists(path_pos):
-        with open(path_pos, 'r', encoding='utf-8') as f:
-            for l in f:
-                l = l.strip()
-                if not l or l.startswith('word\t'):
-                    continue
-                parts = l.split('\t')
-                pos_dict[parts[0].strip().lower()] = float(parts[1]) if len(parts) > 1 else 1.0
-    if os.path.exists(path_neg):
-        with open(path_neg, 'r', encoding='utf-8') as f:
-            for l in f:
-                l = l.strip()
-                if not l or l.startswith('word\t'):
-                    continue
-                parts = l.split('\t')
-                neg_dict[parts[0].strip().lower()] = float(parts[1]) if len(parts) > 1 else -1.0
-    return pos_dict, neg_dict
-
-
-KATA_NEGASI = {
-    'tidak', 'bukan', 'belum', 'jangan', 'tanpa', 'kurang',
-    'tiada', 'tak', 'gak', 'ga', 'nggak', 'bkn', 'tdk'
-}
-
-KATA_PENDEK_POSITIF = {'top', 'jos', 'oke', 'sip', 'ok'}
-
-KATA_SENTIMEN_WHITELIST = {
-    'baik', 'bagus', 'tepat', 'yakin', 'benar', 'jelas', 'cukup', 'hebat', 'mantap', 'keren'
-}
-
-SLANG_DICT = {
-    # Negasi
-    'gak': 'tidak', 'ga': 'tidak', 'nggak': 'tidak', 'ngga': 'tidak',
-    'kagak': 'tidak', 'tdk': 'tidak', 'tak': 'tidak', 'bkn': 'bukan',
-    'blm': 'belum', 'g': 'tidak', 'kaga': 'tidak',
-    # Positif / Apresiasi
-    'bgt': 'banget', 'bener': 'benar', 'betull': 'betul', 'btul': 'betul',
-    'mantapp': 'mantap', 'mantabb': 'mantap', 'mantul': 'mantap', 'mantep': 'mantap',
-    'kerenn': 'keren', 'kereen': 'keren', 'baguss': 'bagus', 'baguuus': 'bagus',
-    'tks': 'terima kasih', 'makasih': 'terima kasih', 'makasi': 'terima kasih',
-    'thanks': 'terima kasih', 'thank': 'terima kasih', 'thx': 'terima kasih',
-    'trims': 'terima kasih', 'terimakasih': 'terima kasih', 'matur nuwun': 'terima kasih',
-    'jos': 'bagus', 'joss': 'bagus', 'top': 'hebat', 'oke': 'baik', 'ok': 'baik', 'sip': 'baik',
-    'sipp': 'baik', 'cuan': 'untung', 'beneran': 'benar', 'juoss': 'bagus',
-    # Negatif / Keluhan
-    'boncos': 'rugi', 'anjlokk': 'anjlok', 'nyungsep': 'jatuh', 'drop': 'turun',
-    'ancur': 'hancur', 'bobrok': 'rusak', 'kaco': 'kacau', 'amblas': 'hilang',
-    'bego': 'bodoh', 'tolol': 'bodoh', 'goblok': 'bodoh', 'ngawur': 'salah',
-    'korup': 'korupsi', 'koruptor': 'korupsi',
-    # Umum
-    'tp': 'tapi', 'klo': 'kalau', 'kalo': 'kalau', 'dr': 'dari', 'yg': 'yang',
-    'dg': 'dengan', 'dgn': 'dengan', 'krn': 'karena', 'utk': 'untuk', 'sy': 'saya',
-    'gw': 'saya', 'gue': 'saya', 'lu': 'kamu', 'loe': 'kamu', 'sdh': 'sudah',
-    'udh': 'sudah', 'udah': 'sudah', 'aja': 'saja'
-}
-
-
-@st.cache_resource
 def load_sastrawi():
     try:
         from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
         from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
         stemmer    = StemmerFactory().create_stemmer()
-        # Whitelist kata negasi dan sentimen agar tidak terhapus
-        stop_words = set(StopWordRemoverFactory().get_stop_words()) - KATA_NEGASI - KATA_SENTIMEN_WHITELIST
+        stop_words = si.siapkan_stopword(set(StopWordRemoverFactory().get_stop_words()))
         return stemmer, stop_words
     except Exception:
         return None, None
 
 
-def tokenize_pra_stem(text: str) -> list:
-    """Pembersihan teks tahap 1 (Pra-stemming untuk pelabelan InSet Lexicon)."""
-    if not isinstance(text, str):
-        return []
-    text = re.sub(r'http\S+|@\w+|#\w+|\d+|[^\w\s]', ' ', text)
-    text = re.sub(r'(.)\1{2,}', r'\1', text)
-    text = re.sub(r'\s+', ' ', text).strip().lower()
-    tokens = text.split()
-    flat = []
-    for t in tokens:
-        expanded = SLANG_DICT.get(t, t)
-        flat.extend(expanded.split())
-    return flat
+@st.cache_resource
+def load_lexicon():
+    """Kamus aktif dibangun dengan fungsi yang SAMA seperti main.py
+    (buang kata tugas -> koreksi domain -> aturan kata ganda)."""
+    _, stop_words = load_sastrawi()
+    k = si.bangun_kamus(os.path.join(DIR_LEXICON, 'inset_positif.txt'),
+                        os.path.join(DIR_LEXICON, 'inset_negatif.txt'),
+                        stop_words or set(),
+                        os.path.join(DIR_LEXICON, 'koreksi_domain.csv'))
+    return k['pos'], k['neg']
 
 
-def label_sentimen_lexicon(tokens, pos_dict: dict, neg_dict: dict, window: int = 3) -> str:
-    """Pelabelan sentimen otomatis berbasis InSet Lexicon dengan jangkauan negasi (pra-stemming)."""
-    if isinstance(tokens, str):
-        tokens = tokenize_pra_stem(tokens)
-    score = 0.0
-    neg_active_until = -1
+@st.cache_data
+def load_ringkasan():
+    if os.path.exists(RINGKASAN_JSON):
+        import json
+        with open(RINGKASAN_JSON, encoding='utf-8') as f:
+            return json.load(f)
+    return {}
 
-    for i, t in enumerate(tokens):
-        if t in KATA_NEGASI:
-            neg_active_until = i + window
-            continue
 
-        is_negated = (i <= neg_active_until)
-
-        if t in pos_dict:
-            w = pos_dict[t]
-            val = -w if is_negated else w
-            score += val
-        elif t in neg_dict:
-            w = neg_dict[t]
-            val = abs(w) if is_negated else -abs(w)
-            score += val
-
-    if score > 0:
-        return 'positif'
-    elif score < 0:
-        return 'negatif'
-    else:
-        return 'netral'
+def label_inset(text: str, pos_dict: dict, neg_dict: dict):
+    """Pelabelan InSet per klausa (aturan yang sama dengan main.py)."""
+    lab, skor, _, _ = si.label_klausa(si.parse_klausa(text), pos_dict, neg_dict)
+    return lab, skor
 
 
 def preprocess_text(text: str, stemmer, stop_words: set) -> str:
-    """Pembersihan teks tahap 2 (Stopwords removal selektif & stemming Sastrawi untuk TF-IDF)."""
-    tokens = tokenize_pra_stem(text)
-    filtered = []
-    for t in tokens:
-        if (len(t) >= 4 or t in KATA_NEGASI or t in KATA_PENDEK_POSITIF) and t not in stop_words:
-            filtered.append(t)
-    if stemmer:
-        filtered = [t if (t in KATA_NEGASI or t in KATA_PENDEK_POSITIF) else stemmer.stem(t) for t in filtered]
-    return ' '.join(filtered)
+    """Praproses tahap 1 + tahap 2 (sama dengan main.py) untuk fitur TF-IDF."""
+    stem_fn = stemmer.stem if stemmer else (lambda w: w)
+    return si.clean_post_stem(si.tokenize_pra_stem(text), stop_words or set(), stem_fn)
 
 
 def show_image(path: str, caption: str = ''):
@@ -392,15 +310,16 @@ if tab_sel in ["🏠 Gambaran Umum", "🏠 Overview"]:
             </div>""", unsafe_allow_html=True)
 
         st.markdown('<div class="section-title">Alur Pipeline Metodologi</div>', unsafe_allow_html=True)
+        n_video = load_ringkasan().get('sumber', {}).get('video', '-')
         steps = [
-            ("1", "Pengumpulan Data", "Crawling komentar dari 12 video YouTube berita ekonomi menggunakan youtube-comment-downloader (tanpa API key)"),
-            ("2", "Preprocessing Teks", "Cleaning URL/mention → Lowercase → Tokenisasi → Filter pendek → Stopword Removal → Stemming (PySastrawi)"),
-            ("3", "Pelabelan Sentimen", "Klasifikasi otomatis: Positif / Negatif / Netral menggunakan InSet Lexicon Bahasa Indonesia"),
-            ("4", "Ekstraksi Fitur TF-IDF", "Pembobotan kata menggunakan TF-IDF (max 5000 fitur, n-gram 1-2) + Split 80% training / 20% testing"),
-            ("5", "Pelatihan Model", "Melatih Naive Bayes Classifier (NBC) dan Random Forest Classifier (RFC) secara paralel"),
-            ("6", "Evaluasi Model", "Mengukur Akurasi, Presisi, Recall, dan F1-Score pada data testing"),
-            ("7", "Visualisasi Hasil", "Pie Chart, Bar Chart perbandingan, Confusion Matrix, dan WordCloud per kelas"),
-            ("8", "Simpan Model", "Ekspor model (.pkl) untuk digunakan kembali tanpa perlu melatih ulang"),
+            ("1", "Pengumpulan Data", f"Komentar dari {n_video} video YouTube (kanal berita & kreator edukasi finansial) dengan youtube-comment-downloader; komentar kosong & duplikat dibuang"),
+            ("2", "Praproses Tahap 1", "Pembersihan tautan/mention/tagar/angka → huruf kecil → pengurangan huruf berulang → normalisasi kata tidak baku → tokenisasi (tanda baca = batas klausa)"),
+            ("3", "Pelabelan InSet Lexicon", f"Per klausa; negasi jendela 3 token (×{si.NEGASI_FAKTOR}); bobot kontras {si.KONTRAS_PRE}/{si.KONTRAS_POST}; kata tugas dibuang & koreksi kamus domain"),
+            ("4", "Praproses Tahap 2", "Stopword selektif → buang token < 4 huruf (kecuali negasi) → stemming ECS (PySastrawi)"),
+            ("5", "Split & TF-IDF", "Stratified 80:20 lalu TF-IDF (unigram+bigram, 5.000 fitur, min_df=2) di-fit hanya pada data latih"),
+            ("6", "Pemodelan", "MultinomialNB (α=1) dan Random Forest (100 pohon, class_weight='balanced')"),
+            ("7", "Evaluasi", "Accuracy, precision/recall/F1 macro, 5-fold stratified CV, uji McNemar"),
+            ("8", "Keyakinan & Kalibrasi", "predict_proba → rata-rata keyakinan, benar vs salah, Multi-class Brier, ECE 10 bin, reliability diagram"),
         ]
         for num, title, desc in steps:
             col_num, col_content = st.columns([1, 10])
@@ -456,26 +375,28 @@ elif tab_sel == "📈 Visualisasi":
             import pickle
             from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-            # Hitung ulang metrik dari test data yang tersimpan di CSV
-            # Gunakan seluruh data untuk menampilkan gambaran umum
+            # Metrik dihitung pada DATA UJI yang sama dengan main.py (split beku di
+            # data/processed/split_ids.csv), bukan split ulang -> tanpa kebocoran.
             try:
-                from sklearn.feature_extraction.text import TfidfVectorizer
-                from sklearn.model_selection import train_test_split
-
-                X_all = tfidf_model.transform(df['komentar_bersih'].fillna(''))
-                y_all = df['label']
-                _, X_test, _, y_test = train_test_split(
-                    X_all, y_all, test_size=0.2, random_state=42, stratify=y_all
-                )
+                if not os.path.exists(SPLIT_CSV):
+                    raise FileNotFoundError("split_ids.csv belum ada; jalankan main.py")
+                sp = pd.read_csv(SPLIT_CSV)
+                ids_uji = set(sp.loc[sp['subset'] == 'uji', 'id_komentar'])
+                df_uji = df[df['id_komentar'].isin(ids_uji)]
+                X_test = tfidf_model.transform(df_uji['komentar_bersih'].fillna(''))
+                y_test = df_uji['label']
                 y_pred_nbc = nbc_model.predict(X_test)
                 y_pred_rfc = rfc_model.predict(X_test)
+                st.caption(f"Data uji: {len(df_uji):,} komentar (split beku 80:20, sama dengan main.py). "
+                           "Presisi, recall, dan F1 memakai rata-rata macro.")
 
                 metrik_rows = []
                 for metrik, fn in [
                     ("Akurasi (%)",  lambda yp: accuracy_score(y_test, yp) * 100),
-                    ("Presisi (%)",  lambda yp: precision_score(y_test, yp, average='weighted', zero_division=0) * 100),
-                    ("Recall (%)",   lambda yp: recall_score(y_test, yp, average='weighted', zero_division=0) * 100),
-                    ("F1-Score (%)", lambda yp: f1_score(y_test, yp, average='weighted', zero_division=0) * 100),
+                    ("Presisi macro (%)",  lambda yp: precision_score(y_test, yp, average='macro', zero_division=0) * 100),
+                    ("Recall macro (%)",   lambda yp: recall_score(y_test, yp, average='macro', zero_division=0) * 100),
+                    ("F1-Score macro (%)", lambda yp: f1_score(y_test, yp, average='macro', zero_division=0) * 100),
+                    ("F1-Score weighted (%)", lambda yp: f1_score(y_test, yp, average='weighted', zero_division=0) * 100),
                 ]:
                     nbc_val = fn(y_pred_nbc)
                     rfc_val = fn(y_pred_rfc)
@@ -494,18 +415,18 @@ elif tab_sel == "📈 Visualisasi":
 
                 # Grafik perbandingan interaktif (live, bukan dari file PNG)
                 st.markdown("#### 📊 Grafik Perbandingan Performa (NBC vs RFC)")
-                metrik_names = ["Akurasi", "Presisi", "Recall", "F1-Score"]
+                metrik_names = ["Akurasi", "Presisi\n(macro)", "Recall\n(macro)", "F1-Score\n(macro)"]
                 nbc_vals_plot = [
                     accuracy_score(y_test, y_pred_nbc) * 100,
-                    precision_score(y_test, y_pred_nbc, average='weighted', zero_division=0) * 100,
-                    recall_score(y_test, y_pred_nbc, average='weighted', zero_division=0) * 100,
-                    f1_score(y_test, y_pred_nbc, average='weighted', zero_division=0) * 100,
+                    precision_score(y_test, y_pred_nbc, average='macro', zero_division=0) * 100,
+                    recall_score(y_test, y_pred_nbc, average='macro', zero_division=0) * 100,
+                    f1_score(y_test, y_pred_nbc, average='macro', zero_division=0) * 100,
                 ]
                 rfc_vals_plot = [
                     accuracy_score(y_test, y_pred_rfc) * 100,
-                    precision_score(y_test, y_pred_rfc, average='weighted', zero_division=0) * 100,
-                    recall_score(y_test, y_pred_rfc, average='weighted', zero_division=0) * 100,
-                    f1_score(y_test, y_pred_rfc, average='weighted', zero_division=0) * 100,
+                    precision_score(y_test, y_pred_rfc, average='macro', zero_division=0) * 100,
+                    recall_score(y_test, y_pred_rfc, average='macro', zero_division=0) * 100,
+                    f1_score(y_test, y_pred_rfc, average='macro', zero_division=0) * 100,
                 ]
 
                 x     = np.arange(len(metrik_names))
@@ -553,8 +474,8 @@ elif tab_sel == "📈 Visualisasi":
                 st.success(f"""
 **Kesimpulan Perbandingan Model:**
 - 🏆 **{best_acc}** memiliki **Akurasi tertinggi** ({max(nbc_vals_plot[0], rfc_vals_plot[0]):.2f}%)
-- 🏆 **{best_f1}** memiliki **F1-Score tertinggi** ({max(nbc_vals_plot[3], rfc_vals_plot[3]):.2f}%)
-- Random Forest cenderung lebih baik karena mampu menangkap pola yang lebih kompleks dari data teks.
+- 🏆 **{best_f1}** memiliki **F1-Score macro tertinggi** ({max(nbc_vals_plot[3], rfc_vals_plot[3]):.2f}%)
+- Signifikansi perbedaan akurasi diuji dengan uji McNemar (lihat bagian kalibrasi & uji statistik di bawah).
                 """)
 
             except Exception as e:
@@ -578,6 +499,39 @@ elif tab_sel == "📈 Visualisasi":
         st.markdown("#### 🔲 Confusion Matrix")
         show_image(os.path.join(DIR_OUTPUT, 'confusion_matrix.png'))
 
+        st.markdown("---")
+        st.markdown("#### 🎯 Probabilitas Keyakinan & Kalibrasi Model")
+        rk = load_ringkasan()
+        ky = rk.get('keyakinan', {})
+        if ky:
+            baris_k = []
+            for nama in ('Naive Bayes', 'Random Forest'):
+                v = ky.get(nama, {})
+                baris_k.append({
+                    'Model': nama,
+                    'Rata-rata keyakinan': f"{v.get('confidence_rata2', float('nan')):.4f}",
+                    'Keyakinan (benar)': f"{v.get('confidence_rata2_benar', float('nan')):.4f}",
+                    'Keyakinan (salah)': f"{v.get('confidence_rata2_salah', float('nan')):.4f}",
+                    'Multi-class Brier': f"{v.get('brier_multiclass', float('nan')):.4f}",
+                    'ECE (10 bin)': f"{v.get('ece_10bin', float('nan')):.4f}",
+                })
+            st.dataframe(pd.DataFrame(baris_k), use_container_width=True, hide_index=True)
+            st.caption("Brier dan ECE: semakin kecil semakin baik (model semakin terkalibrasi).")
+        else:
+            st.info("Ringkasan kalibrasi belum ada. Jalankan `python main.py`.")
+        kc1, kc2 = st.columns(2)
+        with kc1:
+            show_image(os.path.join(DIR_OUTPUT, 'reliability_diagram.png'), 'Reliability diagram')
+        with kc2:
+            show_image(os.path.join(DIR_OUTPUT, 'distribusi_confidence.png'),
+                       'Distribusi keyakinan: prediksi benar vs salah')
+        mc = rk.get('mcnemar')
+        if mc:
+            st.markdown(
+                f"**Uji McNemar (NBC vs RFC):** b = {mc['b_hanya_NB_benar']}, c = {mc['c_hanya_RF_benar']}, "
+                f"χ² = {mc['chi2']:.4f}, p = {mc['p_chi2']:.4f} → "
+                + ("perbedaan **signifikan**" if mc['signifikan_alpha_0_05'] else "perbedaan **tidak signifikan**")
+                + " (α = 0,05).")
         st.markdown("---")
         st.markdown("#### ☁️ WordCloud per Kelas Sentimen")
         wc1, wc2, wc3 = st.columns(3)
@@ -682,8 +636,7 @@ elif tab_sel == "🔮 Prediksi Sentimen":
 
                 with st.spinner("Memproses..."):
                     # Preprocessing Pra-stemming & InSet Lexicon
-                    tokens_pra  = tokenize_pra_stem(komentar_input)
-                    pred_lex    = label_sentimen_lexicon(tokens_pra, kata_positif, kata_negatif)
+                    pred_lex, skor_lex = label_inset(komentar_input, kata_positif, kata_negatif)
                     teks_bersih = preprocess_text(komentar_input, stemmer, stop_words or set())
 
                     # Prediksi model (TF-IDF)
@@ -718,6 +671,7 @@ elif tab_sel == "🔮 Prediksi Sentimen":
                 with st.expander("🔍 Detail Preprocessing"):
                     st.markdown(f"**Teks asli:** {komentar_input}")
                     st.markdown(f"**Setelah preprocessing:** `{teks_bersih}`")
+                    st.markdown(f"**Skor InSet (per klausa, negasi ×{si.NEGASI_FAKTOR}):** `{skor_lex:+.2f}`")
 
                 # Probabilitas
                 st.markdown("#### Probabilitas Keyakinan Model")

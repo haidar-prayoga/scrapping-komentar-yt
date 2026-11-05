@@ -1,6 +1,6 @@
 # 📊 Sistem Analisis Sentimen Komentar YouTube: Kondisi Ekonomi Indonesia Terkait Pelemahan Nilai Tukar Rupiah
 
-Sistem analisis sentimen komprehensif untuk pengumpulan data (*crawling*), pembersihan teks (*preprocessing* 6 tahap), pelabelan sentimen otomatis berbasis **InSet Lexicon** (*Indonesian Sentiment Lexicon* pada tahap *pra-stemming* dengan *Negation Handling* & pembobotan klausa), ekstraksi fitur **TF-IDF**, serta klasifikasi dan komparasi algoritma **Naïve Bayes Classifier (NBC)** dan **Random Forest Classifier (RFC)** yang dilengkapi validasi statistik (5-Fold CV & Uji McNemar) dan dashboard interaktif berbasis **Streamlit**.
+Sistem analisis sentimen komprehensif untuk pengumpulan data (*crawling*), pembersihan teks (praproses dua tahap), pelabelan sentimen otomatis berbasis **InSet Lexicon** (*Indonesian Sentiment Lexicon* pada tahap *pra-stemming* dengan *Negation Handling* & pembobotan klausa), ekstraksi fitur **TF-IDF**, serta klasifikasi dan komparasi algoritma **Naïve Bayes Classifier (NBC)** dan **Random Forest Classifier (RFC)** yang dilengkapi validasi statistik (5-Fold CV & Uji McNemar) dan dashboard interaktif berbasis **Streamlit**.
 
 ---
 
@@ -30,12 +30,12 @@ Sistem analisis sentimen komprehensif untuk pengumpulan data (*crawling*), pembe
 Fluktuasi dan tren pelemahan nilai tukar Rupiah terhadap Dolar Amerika Serikat memicu perhatian luas dan reaksi emosional dari masyarakat Indonesia. Media sosial, khususnya platform YouTube, menjadi kanal publik utama di mana masyarakat secara bebas menyampaikan opini, kritik ekonomi, kekhawatiran inflasi harga bahan pokok, maupun apresiasi terhadap konten edukasi finansial. Mengetahui polaritas sentimen masyarakat secara akurat, objektif, dan terukur sangat krusial bagi analisis respon publik terhadap stabilitas moneter nasional.
 
 ### Tujuan Sistem
-1. **Pengumpulan Data Publik Terfokus**: Mengumpulkan ribuan komentar nyata warganet dari 13 video berita dan diskusi ekonomi nasional di YouTube.
-2. **Standardisasi Teks Percakapan**: Membersihkan data teks media sosial yang sarat bahasa gaul (*slang*), singkatan, tanda baca tidak baku, dan elongasi huruf melalui alur *preprocessing* 6 tahap.
+1. **Pengumpulan Data Publik Terfokus**: Mengumpulkan komentar warganet dari video YouTube kanal berita nasional dan kreator edukasi finansial tentang pelemahan rupiah (saat ini 13 video).
+2. **Standardisasi Teks Percakapan**: Membersihkan data teks media sosial yang sarat bahasa gaul (*slang*), singkatan, tanda baca tidak baku, dan elongasi huruf melalui praproses dua tahap.
 3. **Pelabelan Otomatis Ilmiah & Akurat**: Menerapkan kamus resmi **InSet Lexicon** pada tahap *pra-stemming* yang dilengkapi penanganan negasi (*negation handling* jendela 3 kata) dan pembobotan klausa untuk mengelompokkan komentar ke dalam tiga kelas: **Positif**, **Negatif**, dan **Netral**.
 4. **Komparasi Model Pembelajaran Mesin**: Membandingkan kinerja klasifikasi antara algoritma probabilistik (**Naïve Bayes Classifier**) dan algoritma *ensemble tree-based* (**Random Forest Classifier**) berbasis representasi fitur **TF-IDF**.
 5. **Validasi Statistik Komprehensif**: Menguji stabilitas model melalui *5-Fold Stratified Cross-Validation*, uji signifikansi komparatif (*Uji McNemar*), serta analisis kalibrasi keyakinan (*Brier Score & Expected Calibration Error*).
-6. **Diseminasi Interaktif Modern**: Menyediakan antarmuka dashboard berbasis web (**Streamlit**) yang memfasilitasi eksplorasi data komentar mentah $ightarrow$ bersih, pemantauan visualisasi metrik, dan simulasi prediksi teks baru secara *real-time*.
+6. **Diseminasi Interaktif Modern**: Menyediakan antarmuka dashboard berbasis web (**Streamlit**) yang memfasilitasi eksplorasi data komentar mentah → bersih, pemantauan visualisasi metrik, dan simulasi prediksi teks baru secara *real-time*.
 
 ---
 
@@ -60,89 +60,49 @@ Fluktuasi dan tren pelemahan nilai tukar Rupiah terhadap Dolar Amerika Serikat m
   * `streamlit`: Framework antarmuka dashboard interaktif responsif berbasis web.
 
 ### 3. Bahan Dataset
-* **Sumber Data**: 13 video berita ekonomi terkemuka (CNBC Indonesia, Kompas TV, Metro TV, CNN Indonesia, dan kreator edukasi finansial).
+* **Sumber Data**: 13 video YouTube dari kanal berita nasional dan kreator edukasi finansial (daftar di `data/raw/daftar_video.txt`).
 * **Dataset Mentah (`komentar_raw.csv`)**: **5.733 komentar**.
-* **Setelah Deduplikasi (*Drop Duplicate*)**: **5.632 komentar**.
-* **Dataset Bersih Valid (`komentar_clean.csv`)**: **5.531 komentar** (setelah eliminasi baris kosong hasil pembersihan).
+* **Setelah Deduplikasi**: **5.632 komentar**.
+* **Dataset Bersih Valid (`komentar_clean.csv`)**: **5.530 komentar** (102 komentar kosong setelah praproses dibuang, lihat `output/komentar_dibuang_kosong.csv`).
 
 ### 4. Kamus Leksikon (InSet Lexicon)
-* Menggunakan kamus resmi **InSet Lexicon** (*Indonesian Sentiment Lexicon*) oleh **Fajri Koto & Gemala Y. Rahmaningtyas (2017)**.
-* Memuat **3.609 kata positif** dan **6.579 kata negatif** (total 10.188 lema) lengkap dengan bobot skor polaritas berkisar dari **-5 (sangat negatif)** hingga **+5 (sangat positif)**.
-* Dilakukan penyaringan *pure function words* (kata tugas non-opini seperti *yang*, *pada*, *dari*, *ada*, *ya*) agar tidak menimbulkan bias polaritas dokumen.
-
----
+* Kamus **InSet Lexicon** oleh **Koto & Rahmaningtyas (2017)**: **3.609 kata positif** dan **6.579 kata negatif**, bobot **−5** sampai **+5**.
+* Kamus aktif dibangun dengan urutan tetap (`sentimen_inset.bangun_kamus`):
+  1. **Buang kata tugas** (stopword Sastrawi, 181 kata) kecuali 17 kata yang memang bersentimen.
+  2. **Koreksi kamus domain** (`data/lexicon/koreksi_domain.csv`, 126 kata, setiap kata diberi kategori & alasan):
+     K1 kata fungsi/modalitas → 0; K2 kata topik ekonomi/pemerintahan (*nilai*, *harga*, *presiden*) → 0;
+     K3 kata arah/derajat (*turun*, *tinggi*) → 0; K4 kata ganda yang terpilih di sisi keliru (*bagus*, *benar*, *lemah*) → bobot asli sisi yang benar;
+     K5 polaritas keliru di konteks ekonomi (*mahal*, *mandiri*) → bobot manual.
+  3. **Kata ganda** (ada di kamus positif & negatif): bobot dengan nilai mutlak terbesar dipakai; bila sama besar, kata diabaikan.
 
 ## 🔄 Arsitektur & Alur Kerja Sistem (Pipeline)
 
 ```
-[ 13 Video Berita YouTube ]
+[ data/raw/daftar_video.txt ] ──> scraping_komentar.py (youtube-comment-downloader)
              │
              ▼
-┌────────────────────────────────────────────────────────┐
-│ 1. DATA ACQUISITION / CRAWLING                         │
-│    (youtube-comment-downloader ──> komentar_raw.csv)   │
-│    5.733 Raw ──> Deduplikasi: 5.632 Baris              │
-└────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌────────────────────────────────────────────────────────┐
-│ 2. PREPROCESSING TAHAP 1 (PRA-STEMMING)                │
-│    • Cleaning URL, Mention, Hashtag, Simbol, Angka     │
-│    • Case Folding (Konversi Huruf Kecil)               │
-│    • Reduksi Elongasi Huruf (misal: baguuus ──> bagus) │
-│    • Normalisasi Slang & Singkatan Percakapan Medsos   │
-└────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌────────────────────────────────────────────────────────┐
-│ 3. PELABELAN SENTIMEN INSET LEXICON (PRA-STEMMING)     │
-│    • Pencocokan Token Pra-Stemming dengan Kamus InSet  │
-│    • Negation Handling (Jendela Geser 3 Kata)          │
-│    • Pembobotan Segmen & Klausa Kontras (tetapi, dsb.) │
-│    • Klasifikasi: Positif (S>0), Negatif (S<0), Netral │
-│    ───> Cakupan Leksikon: 92,15%                       │
-└────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌────────────────────────────────────────────────────────┐
-│ 4. PREPROCESSING TAHAP 2 (POST-STEMMING TF-IDF)        │
-│    • Stopword Removal Selektif (Proteksi Negasi/Opini) │
-│    • Filter Token (Panjang >= 4 atau Whitelist Khusus) │
-│    • Stemming Sastrawi ECS (dengan Fast In-Memory Cache)│
-│    ───> komentar_clean.csv (5.531 Baris Valid)         │
-└────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌────────────────────────────────────────────────────────┐
-│ 5. PEMBOBOTAN FITUR TF-IDF & DATA SPLITTING            │
-│    • TF-IDF Vectorizer (Unigram & Bigram, Max 5.000)   │
-│    • Stratified Split (80% Training: 4.424 Data /      │
-│                        20% Testing : 1.107 Data)       │
-└────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌────────────────────────────────────────────────────────┐
-│ 6. PELATIHAN MODEL & VALIDASI SILANG                   │
-│    • Naive Bayes Classifier (MultinomialNB)            │
-│    • Random Forest Classifier (class_weight='balanced')│
-│    • 5-Fold Stratified Cross-Validation (Data Latih)   │
-└────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌────────────────────────────────────────────────────────┐
-│ 7. EVALUASI METRIK, UJI HIPOTESIS & KALIBRASI          │
-│    • Akurasi, Presisi, Recall, F1-Score (Weighted/Macro)│
-│    • Uji Signifikansi Statistik McNemar (p-value)      │
-│    • Expected Calibration Error (ECE) & Brier Score    │
-│    • Ekspor Model (.pkl) & Grafik ke folder output/    │
-└────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌────────────────────────────────────────────────────────┐
-│ 8. DASHBOARD WEB INTERAKTIF (STREAMLIT)                │
-│    (streamlit run dashboard.py ──> port 8501)          │
-└────────────────────────────────────────────────────────┘
+ 1. PENGUMPULAN DATA      komentar_raw.csv (5.733) ─> buang kosong & duplikat (5.632)
+ 2. PRAPROSES TAHAP 1     NFKC, buang tautan/mention/tagar/angka, huruf kecil,
+                          pengurangan huruf berulang, normalisasi kata tidak baku,
+                          tokenisasi (tanda baca = batas klausa)
+ 3. PELABELAN INSET       per klausa; negasi jendela 3 token (× −0,74);
+                          kontras 0,5 / 1,5; kamus aktif (kata tugas dibuang,
+                          koreksi domain, aturan kata ganda)  ─> cakupan 77,02%
+ 4. PRAPROSES TAHAP 2     stopword selektif, token < 4 huruf dibuang (kecuali
+                          negasi), stemming ECS  ─> komentar_clean.csv (5.530)
+ 5. SPLIT & TF-IDF        stratified 80:20 (4.424 / 1.106; dibekukan di
+                          split_ids.csv) lalu TF-IDF fit di data latih saja
+ 6. PEMODELAN             MultinomialNB (α=1), NB prior seragam (pembanding),
+                          Random Forest (100 pohon, class_weight='balanced')
+ 7. EVALUASI              accuracy + precision/recall/F1 macro, 5-fold CV,
+                          uji McNemar, bootstrap CI F1-macro
+ 8. KEYAKINAN/KALIBRASI   predict_proba, benar vs salah, Brier multikelas,
+                          ECE 10 bin, reliability diagram
+ 9. ANOTASI MANUAL        400 komentar acak dari data uji, 2 anotator, Cohen's Kappa
+10. DASBOR STREAMLIT      streamlit run dashboard.py
 ```
+
+Aturan praproses dan pelabelan berada di **`sentimen_inset.py`** dan dipakai bersama oleh `main.py` dan `dashboard.py`, sehingga label pada dasbor identik dengan label penelitian.
 
 ---
 
@@ -155,12 +115,11 @@ Sesuai rancangan metodologi pada proposal penelitian:
 * Oleh karena itu, pelabelan diterapkan pada token **pra-stemming**, sedangkan proses stemming Sastrawi ECS diterapkan setelahnya khusus untuk pembentukan fitur representasi **TF-IDF**.
 
 ### 2. Mekanisme Penanganan Negasi (Negation Handling)
-Opini masyarakat di media sosial kerap membalik arti kalimat melalui kata negasi (*tidak*, *bukan*, *belum*, *jangan*, *tanpa*, *kurang*, *gak*, *ga*, *tak*).
-* Sistem menggunakan aturan jendela geser (*sliding window*) berukuran **3 kata**.
-* Apabila kata sentimen positif didahului kata negasi (contoh: *"tidak bagus"*, *"bukan solusi"*), bobot skornya dibalik menjadi negatif:
-  $$	ext{Score} = -W_{	ext{positif}}$$
-* Sebaliknya, jika kata sentimen negatif didahului kata negasi (contoh: *"tidak panik"*, *"tidak rugi"*), bobotnya dibalik menjadi positif:
-  $$	ext{Score} = +|W_{	ext{negatif}}|$$
+* Kata negasi: *tidak*, *bukan*, *belum*, *jangan*, *tanpa*, *kurang*, *tiada*. Varian tidak baku (*gak*, *ga*, *gk*, *engga*, *enggak*, *ndak*, *jgn*, *blm*, *bkn*, ...) dinormalisasi lebih dahulu.
+* Negasi memengaruhi kata bersentimen dalam **jendela 3 token** pada **klausa yang sama**.
+* Kata bersentimen yang dinegasi dikalikan **−0,74**, yaitu faktor pelemahan negasi VADER (Hutto & Gilbert, 2014):
+  *"tidak suka"* → 3 × (−0,74) = −2,22; *"tidak panik"* → (−4) × (−0,74) = +2,96.
+* Diagnosis per kata: `python main.py --jelaskan "teks komentar"`.
 
 ### 3. Stopword Removal Selektif (Whitelist Protection)
 Stopword bawaan bahasa Indonesia sering kali menghapus kata berbobot opini penting:
@@ -169,97 +128,63 @@ Stopword bawaan bahasa Indonesia sering kali menghapus kata berbobot opini penti
 * **Kata Pujian Pendek**: *top*, *jos*, *oke*, *sip*, *ok*
 
 Sistem menerapkan aturan *whitelist* ketat:
-$$	ext{Stopwords Aktif} = 	ext{Stopwords Sastrawi} - 	ext{KATA\_NEGASI} - 	ext{KATA\_SENTIMEN\_WHITELIST}$$
+`Stopword aktif = Stopword Sastrawi − KATA_NEGASI − KATA_SENTIMEN_WHITELIST`
 Hal ini menjamin kata-kata sentimen dasar seperti *"baik"* tidak tereliminasi pada teks bersih pemodelan.
 
 ### 4. Normalisasi Slang & Reduksi Karakter Berulang (Elongasi)
-* Reduksi huruf berulang $\ge 3$ kali menjadi bentuk tunggal menggunakan *regular expression*:
-  Contoh: `baguuus` $ightarrow$ `bagus`, `kerennn` $ightarrow$ `keren`, `njirrrr` $ightarrow$ `njir`.
-* Kamus slang komprehensif mengonversi ratusan istilah khas percakapan warganet (contoh: `bgt` $ightarrow$ `banget`, `mantul` $ightarrow$ `mantap`, `tks` / `thanks` $ightarrow$ `terima kasih`, `boncos` $ightarrow$ `rugi`, `cuan` $ightarrow$ `untung`).
+* Reduksi huruf berulang ≥ 3 kali menjadi bentuk tunggal menggunakan *regular expression*:
+  Contoh: `baguuus` → `bagus`, `kerennn` → `keren`, `njirrrr` → `njir`.
+* Kamus slang komprehensif mengonversi ratusan istilah khas percakapan warganet (contoh: `bgt` → `banget`, `mantul` → `mantap`, `tks` / `thanks` → `terima kasih`, `boncos` → `rugi`, `cuan` → `untung`).
 
 ---
 
 ## 📊 Hasil Evaluasi & Rangkuman Analisis Sistem
 
-### 1. Sebaran Distribusi Sentimen Opini Publik
-Dari **5.531 data komentar bersih valid**, distribusi sentimen hasil pelabelan adalah:
+> **Status:** hasil sementara. Label masih label otomatis InSet; validasi anotasi manual (Cohen's Kappa) belum dijalankan karena `data/annotation/anotasi_manual.csv` belum diisi. Semua angka dibaca dari `output/hasil_ringkasan.json`.
 
-| Kelas Sentimen | Jumlah Komentar | Persentase | Karakteristik Utama Opini Publik |
-| :--- | :---: | :---: | :--- |
-| **Positif** | **3.051** | **55,16%** | Apresiasi terhadap materi edukasi video, optimisme pemulihan ekonomi, daya tahan bangsa, dan doa/ucapan terima kasih. |
-| **Negatif** | **1.884** | **34,06%** | Keluhan pelemahan rupiah, kenaikan harga bahan pokok/sembako, kritik kebijakan moneter, isu korupsi pejabat, serta kekhawatiran krisis ekonomi. |
-| **Netral** | **596** | **10,78%** | Pertanyaan teknis seputar kurs valas, diskusi perbandingan komoditas (emas vs dolar), serta komentar dengan skor polaritas berimbang. |
+### 1. Distribusi Sentimen (5.530 komentar)
 
-> **Catatan Analisis**: Sebanyak **92,15%** komentar berhasil dicocokkan dengan InSet Lexicon. Pada kelas Netral (596 data), 434 komentar murni tidak mengandung kata opini dan 162 komentar memiliki skor sentimen yang saling meniadakan.
+| Kelas | Jumlah | Persentase |
+| :--- | :---: | :---: |
+| Negatif | 2.354 | 42,57% |
+| Positif | 1.777 | 32,13% |
+| Netral | 1.399 | 25,30% |
 
----
+Cakupan leksikon 77,02%. Dari 1.399 komentar netral, 1.271 tidak memuat kata kamus dan 128 memiliki skor yang saling meniadakan.
 
-### 2. Kinerja Model Machine Learning (Data Uji 20% = 1.107 Komentar)
+### 2. Kinerja Model (data uji 1.106 komentar)
 
-Model dilatih pada 4.424 data latih dan diuji pada 1.107 data uji berstrata (*Stratified 80:20*):
+| Metrik | Naïve Bayes | NB (prior seragam) | Random Forest |
+| :--- | :---: | :---: | :---: |
+| Accuracy | 57,05% | 60,76% | **62,39%** |
+| Precision (macro) | 62,27% | 60,26% | **63,44%** |
+| Recall (macro) | 50,74% | 57,80% | **63,55%** |
+| F1-Score (macro) | 49,50% | 58,27% | **61,81%** |
+| F1-Score (weighted) | 52,80% | 59,94% | **62,34%** |
 
-| Metrik Evaluasi | Naïve Bayes (Standar) | Naïve Bayes (Prior Seragam) | Random Forest (`balanced`) | Keunggulan Algoritma |
-| :--- | :---: | :---: | :---: | :--- |
-| **Akurasi** | 60,07% | **61,79%** | 57,36% | Naive Bayes prior seragam menghasilkan akurasi global tertinggi. |
-| **Presisi (*Weighted*)** | 55,57% | 60,33% | **61,03%** | Random Forest menghasilkan presisi tertimbang paling tinggi. |
-| **Recall (*Weighted*)** | 60,07% | **61,79%** | 57,36% | Mengikuti sebaran akurasi pada evaluasi berstrata. |
-| **F1-Score (*Weighted*)**| 51,68% | **60,60%** | 58,59% | Keduanya bersaing ketat pada bobot agregat. |
-| **F1-Score (*Macro*)**   | 35,49% | 51,26% | **52,07%** | **Random Forest terbaik** dalam menyeimbangkan performa kelas minoritas (*Netral*). |
+### 3. Confusion Matrix (baris = aktual, kolom = prediksi; urutan negatif, netral, positif)
 
----
-
-### 3. Detail Matriks Kebingungan (Confusion Matrix)
-
-Matriks kebingungan menunjukkan rincian prediksi aktual versus prediksi model pada 1.107 data uji:
-
-#### A. Random Forest Classifier (`class_weight='balanced'`)
 ```
-               Prediksi Negatif   Prediksi Netral   Prediksi Positif   Total Aktual
-Aktual Negatif:      193                72                112              377
-Aktual Netral :       24                63                 32              119
-Aktual Positif:      150                82                379              611
-```
-*Kemampuan deteksi kelas minoritas Netral mencapai Recall 52,9% (63 dari 119 terprediksi tepat).*
-
-#### B. Naïve Bayes Classifier (Prior Seragam)
-```
-               Prediksi Negatif   Prediksi Netral   Prediksi Positif   Total Aktual
-Aktual Negatif:      194                15                168              377
-Aktual Netral :       41                27                 51              119
-Aktual Positif:      127                21                463              611
+Random Forest            Naïve Bayes
+[[294 121  56]           [[418  12  41]
+ [ 35 221  24]            [205  46  29]
+ [ 83  97 175]]           [174  14 167]]
 ```
 
----
+### 4. 5-Fold Stratified Cross-Validation (data latih)
+* Naïve Bayes: akurasi 55,43% ± 1,13; F1 macro 46,16% ± 1,88
+* Random Forest: akurasi 63,54% ± 1,75; F1 macro 63,31% ± 1,74
 
-### 4. Validasi Stabilitas: 5-Fold Stratified Cross-Validation
-Pengujian silang 5 lipatan pada 4.424 data latih membuktikan stabilitas model dan ketiadaan *data leakage*:
-* **Naïve Bayes Classifier**:
-  * Rata-rata Akurasi: **$60,62\% \pm 0,58\%$**
-  * Rata-rata F1-Macro: **$36,55\% \pm 0,73\%$**
-* **Random Forest Classifier**:
-  * Rata-rata Akurasi: **$58,02\% \pm 2,11\%$**
-  * Rata-rata F1-Macro: **$53,60\% \pm 2,50\%$**
+### 5. Uji McNemar
+* b (hanya NB benar) = 186; c (hanya RF benar) = 245; χ² = 7,8051; p = 0,0052 → perbedaan **signifikan** (α = 0,05).
+* Bootstrap 95% CI selisih F1 macro (RF − NB): +12,38 poin [+8,66; +15,92].
 
----
+### 6. Probabilitas Keyakinan & Kalibrasi
 
-### 5. Uji Signifikansi Statistik (Uji McNemar)
-Untuk membuktikan secara ilmiah apakah perbedaan kinerja klasifikasi antara NBC dan RFC bermakna:
-* Jumlah sampel di mana hanya Naïve Bayes yang benar ($b$): **223**
-* Jumlah sampel di mana hanya Random Forest yang benar ($c$): **193**
-* Nilai Statistik Chi-Square ($\chi^2$): **2,0216**
-* Nilai $p$-value (*Exact McNemar*): **0,1550** ($p > 0,05$)
-* **Kesimpulan Ilmiah**: Pada tingkat signifikansi $lpha = 0,05$, **tidak terdapat perbedaan performa yang signifikan secara statistik** antara Naïve Bayes Classifier dan Random Forest Classifier. Keduanya memiliki kompetensi prediktif yang sepadan, di mana NBC unggul pada efisiensi komputasi dan akurasi global, sedangkan RFC unggul pada pemerataan recall kelas minoritas.
-
----
-
-### 6. Analisis Keyakinan & Kalibrasi Probabilitas Model
-* **Rata-rata Keyakinan (*Confidence*)**:
-  * Naïve Bayes: **66,10%** (saat prediksi benar: 69,38%, saat salah: 61,17%).
-  * Random Forest: **62,22%** (saat benar: 63,72%, saat salah: 60,21%).
-* **Nilai Kesalahan Kalibrasi (*Expected Calibration Error - ECE*)**:
-  * Random Forest: **0,0687** ($6,87\%$)
-  * Naïve Bayes: **0,0714** ($7,14\%$)
-  * *Kedua model terkalibrasi secara sehat dengan gap overconfidence di bawah 6%.*
+| Model | Keyakinan rata-rata | Benar | Salah | Brier multikelas | ECE (10 bin) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| Naïve Bayes | 0,5485 | 0,5906 | 0,4925 | 0,5321 | 0,0573 |
+| Random Forest | 0,6346 | 0,6682 | 0,5789 | 0,5084 | 0,0414 |
 
 ---
 
@@ -268,23 +193,24 @@ Untuk membuktikan secara ilmiah apakah perbedaan kinerja klasifikasi antara NBC 
 Dashboard dirancang dengan konsep estetika modern bertema *dark mode* elegan menggunakan palet warna terkurasi:
 
 1. **Tab 1 — 🏠 Gambaran Umum (Overview)**:
-   * Kartu ringkasan metrik utama: Total Dataset (5.531 data), Total Positif, Total Negatif, Total Netral.
+   * Kartu ringkasan metrik utama: Total Dataset (5.530 data), Total Positif, Total Negatif, Total Netral.
    * Visualisasi donat/pie chart proporsi sentimen publik berbasis InSet Lexicon.
-   * Diagram ringkas tahapan alur penelitian 6 tahap.
+   * Diagram ringkas tahapan alur penelitian 8 tahap.
 2. **Tab 2 — 📈 Visualisasi & Komparasi Model**:
-   * Tabel metrik evaluasi perbandingan NBC vs RFC secara berdampingan.
+   * Tabel metrik NBC vs RFC pada **data uji yang sama dengan `main.py`** (split beku `split_ids.csv`), rata-rata **macro**.
+   * Tabel keyakinan & kalibrasi (Brier, ECE), *reliability diagram*, distribusi keyakinan benar vs salah, dan hasil uji McNemar.
    * Grafik diagram batang perbandingan akurasi, presisi, recall, dan F1-score.
    * Heatmap *Confusion Matrix* gabungan kedua algoritma.
    * Galeri *WordCloud* resolusi tinggi untuk masing-masing kelas sentimen (Positif = hijau, Negatif = merah, Netral = biru).
 3. **Tab 3 — 📋 Data Komentar**:
-   * Tabel interaktif yang menampilkan transparansi data: **Komentar Mentah $ightarrow$ Komentar Bersih $ightarrow$ Label Sentimen $ightarrow$ Likes $ightarrow$ Tanggal**.
+   * Tabel interaktif yang menampilkan transparansi data: **Komentar Mentah → Komentar Bersih → Label Sentimen → Likes → Tanggal**.
    * Fitur pencarian kata kunci (*live search filter*).
    * Fitur filter dropdown sentimen (Semua, Positif, Negatif, Netral).
    * Tombol *Download Dataset* (format CSV dengan encoding UTF-8 BOM).
 4. **Tab 4 — 🔮 Prediksi Sentimen Interaktif**:
    * Area uji coba teks komentar baru secara *real-time*.
    * Disediakan tombol jalan pintas (*quick test preset*) dengan berbagai contoh komentar berita ekonomi.
-   * Hasil prediksi instan dari 3 mesin komparatif: **InSet Lexicon**, **Naïve Bayes**, dan **Random Forest**.
+   * Hasil prediksi dari 3 mesin: **InSet Lexicon** (aturan per klausa yang sama dengan `main.py`, beserta skornya), **Naïve Bayes**, dan **Random Forest**.
    * Transparansi rincian teks setelah melalui *preprocessing*.
    * Diagram batang probabilitas keyakinan model (*confidence score*).
 
@@ -309,12 +235,15 @@ Dashboard dirancang dengan konsep estetika modern bertema *dark mode* elegan men
 Jurnal - Program/
 ├── data/
 │   ├── raw/
-│   │   └── komentar_raw.csv        # Dataset mentah hasil crawling YouTube (5.733 baris)
+│   │   ├── daftar_video.txt        # Daftar URL video sumber
+│   │   └── komentar_raw.csv        # Dataset mentah hasil scraping YouTube (5.733 baris)
 │   ├── processed/
-│   │   └── komentar_clean.csv      # Dataset bersih hasil preprocessing & pelabelan (5.531 baris)
+│   │   ├── komentar_clean.csv      # Dataset bersih hasil praproses & pelabelan (5.530 baris)
+│   │   └── split_ids.csv           # Split latih/uji yang dibekukan
 │   ├── annotation/
 │   │   └── anotasi_sampel_blind.csv# 400 sampel acak blind untuk uji Cohen's Kappa
 │   └── lexicon/
+│       ├── koreksi_domain.csv      # Koreksi kamus domain (kata, bobot, kategori, alasan)
 │       ├── inset_positif.txt       # Kamus InSet resmi kata positif + bobot
 │       ├── inset_positif.tsv       # Format TSV kata positif
 │       ├── inset_negatif.txt       # Kamus InSet resmi kata negatif + bobot
@@ -337,6 +266,9 @@ Jurnal - Program/
 ├── proposal/
 │   ├── Sempro-final.docx           # Naskah proposal penelitian lengkap
 │   └── jurnal-sitasi/              # Kumpulan PDF referensi jurnal rujukan
+├── scraping_komentar.py            # Pengumpulan komentar (youtube-comment-downloader)
+├── ambil_metadata_video.py         # Metadata video (kanal, tanggal unggah) via yt-dlp
+├── sentimen_inset.py               # Modul bersama: praproses & pelabelan InSet
 ├── main.py                         # Skrip pipeline utama (Preprocessing s.d. Evaluasi & Export)
 ├── dashboard.py                    # Aplikasi web dashboard interaktif Streamlit
 ├── requirements.txt                # Daftar dependensi pustaka Python
@@ -372,14 +304,20 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Menjalankan Pipeline Utama (`main.py`)
+### 4. (Opsional) Mengumpulkan Ulang Komentar
+```bash
+python scraping_komentar.py          # membaca data/raw/daftar_video.txt
+```
+*Mengubah data mentah berarti split dan sampel anotasi dibuat ulang oleh `main.py`.*
+
+### 5. Menjalankan Pipeline Utama (`main.py`)
 Untuk mengeksekusi pembersihan teks, pelabelan InSet resmi, ekstraksi fitur TF-IDF, pelatihan model NBC & RFC, validasi 5-Fold CV, uji McNemar, serta pembuatan seluruh grafik visualisasi:
 ```bash
 python main.py
 ```
-*Waktu eksekusi berkisar 10–20 detik berkat in-memory caching pada PySastrawi.*
+*Waktu eksekusi sekitar 1–2 menit (sebagian besar untuk validasi silang dan bootstrap).*
 
-### 5. Menjalankan Dashboard Streamlit (`dashboard.py`)
+### 6. Menjalankan Dashboard Streamlit (`dashboard.py`)
 Untuk membuka antarmuka visual interaktif:
 ```bash
 streamlit run dashboard.py

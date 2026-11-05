@@ -1,6 +1,6 @@
 """
 =============================================================================
-  PIPELINE ANALISIS SENTIMEN KOMENTAR YOUTUBE  --  REVISI v4
+  PIPELINE ANALISIS SENTIMEN KOMENTAR YOUTUBE  --  REVISI v5
   Topik   : Kondisi Ekonomi Indonesia Akibat Pelemahan Nilai Tukar Rupiah
   Model   : Naive Bayes Classifier (NBC) & Random Forest Classifier (RFC)
   Pelabel : InSet Lexicon (pra-stemming + penanganan negasi)
@@ -24,11 +24,8 @@
  11. Pelabelan SADAR KLAUSA: cakupan negasi berhenti di batas klausa/kalimat
      (tanda baca kini dipakai sebagai batas), tidak bocor lintas kalimat.
  12. Penanganan KONTRAS (tapi/namun/tetapi/...): klausa sebelum kontras
-     diberi bobot 0,5 dan sesudahnya 1,5. Negasi membalik polaritas penuh
-     (faktor -1,0). Catatan: faktor -0,74 (VADER) sempat dipakai, tetapi pada
-     InSet melemahkan negasi sehingga 'tidak suka' kalah oleh kata bobot
-     ambigu; keputusan ini diambil SETELAH memeriksa contoh keluaran, dan
-     wajib diungkapkan; sensitivitasnya dilaporkan terhadap gold.
+     diberi bobot 0,5 dan sesudahnya 1,5. Kata bersentimen yang dinegasi
+     dikalikan -0,74 (faktor VADER; Hutto & Gilbert, 2014), sesuai proposal.
  13. LABEL_MODE: 'baseline' (aturan v2) vs 'klausa' (v3) -> ablasi; keduanya
      dihitung dan dibandingkan; pemenangnya ditentukan oleh GOLD STANDARD
      manual, bukan oleh akurasi classifier (tidak sebanding antarlabel).
@@ -45,7 +42,7 @@
      (STOPWORD_SENTIMEN_TETAP). Daftar dibuang: kata_tugas_dibuang_dari_kamus.csv.
  19. [v4] ATURAN KATA GANDA: kata yang ada di kamus positif DAN negatif
      (overlap) tidak lagi otomatis dihitung positif. OVERLAP_RULE:
-     'abaikan' (default, a priori) | 'positif' | 'negatif' | 'maks_abs' | 'jumlah'.
+     'maks_abs' (dipakai) | 'abaikan' | 'positif' | 'negatif' | 'jumlah'.
      Dampaknya pada distribusi label & kesesuaian gold dilaporkan.
  20. [v4] Audit kamus menampilkan bobot asli (pos/neg), bobot dipakai, penanda
      overlap & stopword; output/overlap_kamus.csv.
@@ -55,7 +52,12 @@
      data/raw/metadata_video.csv tersedia; komentar yang dibuang karena kosong
      setelah praproses diekspor untuk diperiksa.
  18. Split train/test DIBEKUKAN di data/processed/split_ids.csv (tidak bergeser
-     saat aturan pelabelan/kamus berubah; sampel anotasi tetap valid).=============================================================================
+     saat aturan pelabelan/kamus berubah; sampel anotasi tetap valid).
+ 24. [v5] Aturan praproses & pelabelan dipindah ke sentimen_inset.py agar dasbor
+     memakai aturan yang identik; faktor negasi -0,74; koreksi kamus domain
+     (data/lexicon/koreksi_domain.csv); normalisasi negasi tidak baku (jgn, gk,
+     engga, ...); mention ber-tanda hubung; NFKC & karakter lebar nol.
+=============================================================================
 """
 
 import sys
@@ -108,22 +110,16 @@ N_BINS       = 10        # jumlah bin ECE
 ANOTASI_N    = 400       # ukuran sampel anotasi manual (300-500)
 TFIDF_PARAMS = dict(max_features=5000, ngram_range=(1, 2), min_df=2)
 
-# --- parameter pelabelan (ditetapkan a priori, bukan di-tuning pada data) -----
-LABEL_MODE    = 'klausa'   # 'baseline' = aturan v2 | 'klausa' = aturan v3
-NEGASI_FAKTOR = -1.0       # pembalikan penuh. (-0.74 pernah dicoba; lihat sensitivitas_parameter_gold.csv)
-KONTRAS_PRE   = 0.5        # bobot klausa SEBELUM kata kontras (tapi/namun/...)
-KONTRAS_POST  = 1.5        # bobot klausa SESUDAH kata kontras
-KONTRAS = {'tapi', 'tetapi', 'namun', 'melainkan', 'padahal', 'sayangnya'}
+# --- parameter pelabelan: SATU sumber kebenaran di sentimen_inset.py ---------
+# (ditetapkan a priori, bukan di-tuning pada data; dasbor memakai modul yang sama)
+import sentimen_inset as si
+from sentimen_inset import (NEGASI_FAKTOR, KONTRAS_PRE, KONTRAS_POST, KONTRAS, OVERLAP_RULE,
+                            KATA_NEGASI, KATA_SENTIMEN_WHITELIST, SLANG_DICT,
+                            STOPWORD_SENTIMEN_TETAP, terapkan_aturan_overlap)
+LABEL_MODE = 'klausa'      # 'baseline' = aturan v2 | 'klausa' = aturan v3 (dipakai)
 POLA_FOKUS_KREATOR = (r'terima ?kasih|makasih|thanks?|thank you|\bvideo\b|channel|'
                       r'konten|subscriber|kreator|penjelasan|edukasi')
-OVERLAP_RULE = 'maks_abs'  # kata di kamus positif DAN negatif: 'maks_abs' | 'jumlah' | 'abaikan' | 'positif' | 'negatif'
 BUANG_STOPWORD_DARI_KAMUS = True   # buang kata tugas (stopword Sastrawi) dari kamus sentimen
-# stopword yang tetap dipertahankan karena memang bermuatan sentimen (tinjau & sesuaikan)
-STOPWORD_SENTIMEN_TETAP = {
-    'masalah', 'persoalan', 'mempersoalkan', 'penting', 'enak', 'keterlaluan', 'percuma',
-    'mampu', 'pantas', 'betul', 'baiklah', 'seenaknya', 'kelamaan', 'sepihak', 'memihak',
-    'meyakinkan', 'siap'
-}
 # =============================================================================
 # KONFIGURASI DIREKTORI
 # =============================================================================
@@ -160,49 +156,8 @@ def to_py(o):
 
 
 # =============================================================================
-# DEFINISI KATA NEGASI, WHITELIST SENTIMEN & NORMALISASI SLANG
+# KATA NEGASI, WHITELIST SENTIMEN & NORMALISASI SLANG -> lihat sentimen_inset.py
 # =============================================================================
-# Catatan: varian (gak, ga, tak, tdk, nggak, bkn) dinormalisasi oleh SLANG_DICT
-# menjadi 'tidak'/'bukan' SEBELUM pelabelan, sehingga negasi efektif hanya:
-# tidak, bukan, belum, jangan, tanpa, kurang, tiada.
-KATA_NEGASI = {
-    'tidak', 'bukan', 'belum', 'jangan', 'tanpa', 'kurang',
-    'tiada', 'tak', 'gak', 'ga', 'nggak', 'bkn', 'tdk'
-}
-
-KATA_SENTIMEN_WHITELIST = {
-    'baik', 'bagus', 'tepat', 'yakin', 'benar', 'jelas',
-    'cukup', 'hebat', 'mantap', 'keren'
-}
-
-SLANG_DICT = {
-    # Negasi
-    'gak': 'tidak', 'ga': 'tidak', 'nggak': 'tidak', 'ngga': 'tidak',
-    'kagak': 'tidak', 'tdk': 'tidak', 'tak': 'tidak', 'bkn': 'bukan',
-    'blm': 'belum', 'g': 'tidak', 'kaga': 'tidak',
-    # Positif / Apresiasi
-    'bgt': 'banget', 'bener': 'benar', 'betull': 'betul', 'btul': 'betul',
-    'mantapp': 'mantap', 'mantabb': 'mantap', 'mantul': 'mantap', 'mantep': 'mantap',
-    'kerenn': 'keren', 'kereen': 'keren', 'baguss': 'bagus', 'baguuus': 'bagus',
-    'tks': 'terima kasih', 'makasih': 'terima kasih', 'makasi': 'terima kasih',
-    'thanks': 'terima kasih', 'thank': 'terima kasih', 'thx': 'terima kasih',
-    'trims': 'terima kasih', 'terimakasih': 'terima kasih',
-    'jos': 'bagus', 'joss': 'bagus', 'top': 'hebat', 'oke': 'baik', 'ok': 'baik',
-    'sip': 'baik', 'sipp': 'baik', 'cuan': 'untung', 'beneran': 'benar', 'juoss': 'bagus',
-    # Negatif / Keluhan
-    'boncos': 'rugi', 'anjlokk': 'anjlok', 'nyungsep': 'jatuh', 'drop': 'turun',
-    'ancur': 'hancur', 'bobrok': 'rusak', 'kaco': 'kacau', 'amblas': 'hilang',
-    'bego': 'bodoh', 'tolol': 'bodoh', 'goblok': 'bodoh', 'ngawur': 'salah',
-    'korup': 'korupsi', 'koruptor': 'korupsi',
-    # Umum
-    'tp': 'tapi', 'klo': 'kalau', 'kalo': 'kalau', 'dr': 'dari', 'yg': 'yang',
-    'dg': 'dengan', 'dgn': 'dengan', 'krn': 'karena', 'utk': 'untuk', 'sy': 'saya',
-    'gw': 'saya', 'gue': 'saya', 'lu': 'kamu', 'loe': 'kamu', 'sdh': 'sudah',
-    'udh': 'sudah', 'udah': 'sudah', 'aja': 'saja'
-}
-# CATATAN: kunci 'matur nuwun' dihapus karena tidak pernah cocok (token tunggal),
-#          dan KATA_PENDEK_POSITIF dihapus karena tak terjangkau (sudah dipetakan
-#          SLANG_DICT: top->hebat, jos->bagus, oke/ok/sip->baik).
 
 
 # =============================================================================
@@ -217,8 +172,7 @@ from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFacto
 
 stemmer = StemmerFactory().create_stemmer()
 raw_stopwords = set(StopWordRemoverFactory().get_stop_words())
-# Whitelist: negasi & kata sentimen penting tidak boleh terhapus
-stop_words = raw_stopwords - KATA_NEGASI - KATA_SENTIMEN_WHITELIST
+stop_words = si.siapkan_stopword(raw_stopwords)   # negasi & kata sentimen penting tidak dihapus
 
 stem_cache = {}
 
@@ -232,254 +186,64 @@ def fast_stem(word: str) -> str:
     return stem_cache[word]
 
 
-def load_lexicon_dict(file_path: str) -> dict:
-    """Memuat kamus InSet (format: kata<TAB>bobot). Gagal keras jika file hilang."""
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Kamus leksikon tidak ditemukan: {file_path}")
-    d = {}
-    with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.lower().startswith('word'):
-                continue
-            parts = line.split('\t')
-            w = parts[0].strip().lower()
-            try:
-                d[w] = float(parts[1])
-            except (IndexError, ValueError):
-                continue
-    if not d:
-        raise ValueError(f"Kamus kosong / format tidak terbaca: {file_path}")
-    return d
+KAMUS = si.bangun_kamus(POS_TXT, NEG_TXT, stop_words, KOREKSI_CSV, OVERLAP_RULE,
+                        buang_stopword=BUANG_STOPWORD_DARI_KAMUS)
+POS_RAW, NEG_RAW = KAMUS['pos_raw'], KAMUS['neg_raw']   # kamus asli
+POS_K, NEG_K = KAMUS['pos_k'], KAMUS['neg_k']           # setelah buang kata tugas & koreksi
+pos_dict, neg_dict = KAMUS['pos'], KAMUS['neg']         # kamus AKTIF
+KATA_TUGAS_DIBUANG = KAMUS['kata_tugas_dibuang']
+overlap = set(POS_RAW) & set(NEG_RAW)
+pendek = sum(1 for w in list(POS_RAW) + list(NEG_RAW) if len(w) < 4)
 
-
-def terapkan_aturan_overlap(pos0: dict, neg0: dict, aturan: str):
-    """Selesaikan kata yang muncul di kedua kamus. Mengembalikan (pos, neg) baru."""
-    P, N = dict(pos0), dict(neg0)
-    for w in set(pos0) & set(neg0):
-        wp, wn = abs(pos0[w]), -abs(neg0[w])
-        if aturan == 'positif':
-            N.pop(w)
-        elif aturan == 'negatif':
-            P.pop(w)
-        elif aturan == 'maks_abs':      # entri dengan |bobot| terbesar menang; seri -> abaikan
-            if wp > abs(wn):
-                N.pop(w)
-            elif wp < abs(wn):
-                P.pop(w)
-            else:
-                P.pop(w)
-                N.pop(w)
-        elif aturan == 'jumlah':
-            P.pop(w)
-            N.pop(w)
-            net = wp + wn
-            if net > 0:
-                P[w] = net
-            elif net < 0:
-                N[w] = net
-        elif aturan == 'abaikan':
-            P.pop(w)
-            N.pop(w)
-        else:
-            raise ValueError(f"OVERLAP_RULE tidak dikenal: {aturan}")
-    return P, N
-
-
-pos_dict = load_lexicon_dict(POS_TXT)
-neg_dict = load_lexicon_dict(NEG_TXT)
-overlap = set(pos_dict) & set(neg_dict)
-pendek = sum(1 for w in list(pos_dict) + list(neg_dict) if len(w) < 4)
-
-print(f"Kamus Positif : {len(pos_dict):,} kata")
-print(f"Kamus Negatif : {len(neg_dict):,} kata")
-print(f"Kata ada di KEDUA kamus (positif diprioritaskan): {len(overlap):,}")
-print(f"Entri kamus dengan panjang < 4 huruf (tidak lolos filter fitur): {pendek:,}")
-RINGKASAN['leksikon'] = {
-    'positif': len(pos_dict), 'negatif': len(neg_dict),
-    'overlap': len(overlap), 'entri_kurang_4_huruf': pendek
-}
-
-# --- koreksi polaritas domain (opsional; hasil audit manual) -------------------
-POS_RAW, NEG_RAW = dict(pos_dict), dict(neg_dict)   # kamus asli (sebelum koreksi)
-n_stop_buang = 0
-KATA_TUGAS_DIBUANG = set()
-if BUANG_STOPWORD_DARI_KAMUS:
-    kata_buang = (stop_words - STOPWORD_SENTIMEN_TETAP) & (set(pos_dict) | set(neg_dict))
-    for w in kata_buang:
-        pos_dict.pop(w, None)
-        neg_dict.pop(w, None)
-    n_stop_buang = len(kata_buang)
-    KATA_TUGAS_DIBUANG = set(kata_buang)
-    print(f"Kata tugas dibuang dari kamus : {n_stop_buang:,} (stopword Sastrawi, kecuali "
-          f"{len(STOPWORD_SENTIMEN_TETAP)} yang dipertahankan)")
-    pd.DataFrame({'kata': sorted(kata_buang),
-                  'bobot_pos_asli': [POS_RAW.get(w) for w in sorted(kata_buang)],
-                  'bobot_neg_asli': [NEG_RAW.get(w) for w in sorted(kata_buang)]}
-                 ).to_csv(os.path.join(DIR_OUTPUT, 'kata_tugas_dibuang_dari_kamus.csv'), index=False)
-RINGKASAN['leksikon']['kata_tugas_dibuang'] = n_stop_buang
-n_koreksi = 0
-if os.path.exists(KOREKSI_CSV):
-    kor = pd.read_csv(KOREKSI_CSV)
-    for _, r in kor.iterrows():
-        w = str(r['kata']).strip().lower()
-        b = float(r['bobot'])
-        pos_dict.pop(w, None)
-        neg_dict.pop(w, None)
-        if b > 0:
-            pos_dict[w] = b
-        elif b < 0:
-            neg_dict[w] = b
-        n_koreksi += 1
-    print(f"Koreksi domain diterapkan     : {n_koreksi} kata ({KOREKSI_CSV})")
-else:
-    print("Koreksi domain                : tidak ada (data/lexicon/koreksi_domain.csv)")
-RINGKASAN['koreksi_domain'] = n_koreksi
-
-POS_K, NEG_K = dict(pos_dict), dict(neg_dict)          # setelah koreksi, sebelum aturan overlap
-pos_dict, neg_dict = terapkan_aturan_overlap(POS_K, NEG_K, OVERLAP_RULE)
+print(f"Kamus Positif (asli) : {len(POS_RAW):,} kata")
+print(f"Kamus Negatif (asli) : {len(NEG_RAW):,} kata")
+print(f"Kata ada di KEDUA kamus     : {len(overlap):,}")
+print(f"Entri kamus dengan panjang < 4 huruf: {pendek:,}")
+print(f"Kata tugas dibuang dari kamus : {len(KATA_TUGAS_DIBUANG):,} (stopword Sastrawi, kecuali "
+      f"{len(STOPWORD_SENTIMEN_TETAP)} yang dipertahankan)")
+pd.DataFrame({'kata': sorted(KATA_TUGAS_DIBUANG),
+              'bobot_pos_asli': [POS_RAW.get(w) for w in sorted(KATA_TUGAS_DIBUANG)],
+              'bobot_neg_asli': [NEG_RAW.get(w) for w in sorted(KATA_TUGAS_DIBUANG)]}
+             ).to_csv(os.path.join(DIR_OUTPUT, 'kata_tugas_dibuang_dari_kamus.csv'), index=False)
+n_koreksi = len(KAMUS['koreksi'])
+print(f"Koreksi domain diterapkan     : {n_koreksi} kata"
+      + (f" ({KOREKSI_CSV})" if n_koreksi else " (data/lexicon/koreksi_domain.csv tidak ada)"))
 print(f"Aturan kata ganda (overlap)   : '{OVERLAP_RULE}' -> kamus aktif "
       f"+{len(pos_dict):,} / -{len(neg_dict):,}")
-RINGKASAN['leksikon']['aturan_overlap'] = OVERLAP_RULE
-RINGKASAN['leksikon']['aktif_positif'] = len(pos_dict)
-RINGKASAN['leksikon']['aktif_negatif'] = len(neg_dict)
+print(f"Faktor negasi = {NEGASI_FAKTOR} | bobot kontras = {KONTRAS_PRE}/{KONTRAS_POST}")
+RINGKASAN['leksikon'] = {
+    'positif': len(POS_RAW), 'negatif': len(NEG_RAW),
+    'overlap': len(overlap), 'entri_kurang_4_huruf': pendek,
+    'kata_tugas_dibuang': len(KATA_TUGAS_DIBUANG), 'aturan_overlap': OVERLAP_RULE,
+    'aktif_positif': len(pos_dict), 'aktif_negatif': len(neg_dict),
+    'faktor_negasi': NEGASI_FAKTOR, 'kontras_pre': KONTRAS_PRE, 'kontras_post': KONTRAS_POST,
+}
+RINGKASAN['koreksi_domain'] = n_koreksi
 
 # =============================================================================
-# 2. FUNGSI PRAPROSES & PELABELAN
+# 2. FUNGSI PRAPROSES & PELABELAN (pembungkus modul sentimen_inset)
 # =============================================================================
-def tokenize_pra_stem(text: str) -> list:
-    """
-    Praproses TAHAP 1 (sebelum pelabelan):
-    cleaning -> case folding -> reduksi huruf berulang -> normalisasi slang -> tokenisasi
-    """
-    if not isinstance(text, str):
-        return []
-    text = text.lower()
-    text = re.sub(r'http\S+|www\.\S+|@\w+|#\w+|\d+|[^\w\s]', ' ', text)
-    text = re.sub(r'(.)\1{2,}', r'\1', text)      # baguuus -> bagus  (BUG DIPERBAIKI)
-    text = re.sub(r'\s+', ' ', text).strip()
-
-    flat = []
-    for t in text.split():
-        flat.extend(SLANG_DICT.get(t, t).split())
-    return flat
+tokenize_pra_stem = si.tokenize_pra_stem
+parse_klausa = si.parse_klausa
 
 
 def label_sentimen_lexicon(tokens: list, window: int = 3):
-    """
-    Pelabelan InSet pada token pra-stemming dengan penanganan negasi (jendela 3 token).
-    Mengembalikan (label, skor, jumlah_kata_cocok).
-    """
-    score, n_cocok = 0.0, 0
-    neg_active_until = -1
-    for i, t in enumerate(tokens):
-        if t in KATA_NEGASI:
-            neg_active_until = i + window
-            continue
-        negated = (i <= neg_active_until)
-        if t in pos_dict:
-            n_cocok += 1
-            w = pos_dict[t]
-            score += -w if negated else w
-        elif t in neg_dict:
-            n_cocok += 1
-            w = abs(neg_dict[t])
-            score += w if negated else -w
-    if score > 0:
-        return 'positif', score, n_cocok
-    if score < 0:
-        return 'negatif', score, n_cocok
-    return 'netral', score, n_cocok
-
-
-def clean_post_stem(tokens: list) -> str:
-    """
-    Praproses TAHAP 2 (setelah pelabelan, untuk fitur TF-IDF):
-    stopword selektif -> filter panjang >= 4 (negasi dikecualikan) -> stemming
-    """
-    kept = [t for t in tokens
-            if (len(t) >= 4 or t in KATA_NEGASI) and t not in stop_words]
-    return ' '.join(fast_stem(t) for t in kept)
-
-
-# =============================================================================
-# 2b. PELABELAN SADAR KLAUSA (v3)
-# =============================================================================
-def parse_klausa(text: str) -> list:
-    """
-    Memecah komentar menjadi KALIMAT -> SEGMEN (klausa) -> token.
-    Batas kalimat : . ! ? ; baris baru
-    Batas klausa  : , : ( ) " / dan kata kontras (tapi/namun/tetapi/...)
-    Hasil: list of (segmen_list, indeks_segmen_pertama_setelah_kontras | None)
-    """
-    if not isinstance(text, str):
-        return []
-    t = text.lower()
-    t = re.sub(r'http\S+|www\.\S+|@\w+|#\w+|\d+', ' ', t)
-    t = re.sub(r'(.)\1{2,}', r'\1', t)
-    t = re.sub(r'[.!?;\n\r]+', ' __S__ ', t)
-    t = re.sub(r'[,:()\[\]"/–—]+', ' __K__ ', t)
-    t = re.sub(r'[^\w\s]', ' ', t)
-
-    hasil, segs, kidx = [], [[]], None
-    for tk in t.split():
-        if tk == '__S__':
-            hasil.append((segs, kidx))
-            segs, kidx = [[]], None
-        elif tk == '__K__':
-            if segs[-1]:
-                segs.append([])
-        else:
-            for sub_t in SLANG_DICT.get(tk, tk).split():
-                if sub_t in KONTRAS:
-                    if segs[-1]:
-                        segs.append([])
-                    kidx = len(segs) - 1
-                else:
-                    segs[-1].append(sub_t)
-    hasil.append((segs, kidx))
-    return [(sg, k) for sg, k in hasil if any(sg)]
+    """Aturan v2 (baseline ablasi). Mengembalikan (label, skor, jumlah_kata_cocok)."""
+    return si.label_baseline(tokens, pos_dict, neg_dict, window)
 
 
 def label_klausa(kalimat_list: list, neg_faktor=None, pre=None, post=None, window: int = 3,
                  pdict=None, ndict=None):
-    """
-    Pelabelan InSet sadar klausa. Mengembalikan (label, skor, ada_kontras, campuran).
-    - negasi berlaku hanya dalam satu segmen (jendela 3 token)
-    - kata bersentimen yang dinegasi dikali neg_faktor (<0)
-    - klausa sebelum/sesudah kata kontras dikali pre/post
-    - campuran = ada segmen positif DAN segmen negatif dalam satu komentar
-    """
-    neg_faktor = NEGASI_FAKTOR if neg_faktor is None else neg_faktor
-    P = pos_dict if pdict is None else pdict
-    N = neg_dict if ndict is None else ndict
-    pre  = KONTRAS_PRE  if pre  is None else pre
-    post = KONTRAS_POST if post is None else post
-    total, ada_kontras, ada_pos, ada_neg = 0.0, False, False, False
-    for segs, kidx in kalimat_list:
-        if kidx is not None:
-            ada_kontras = True
-        for j, seg in enumerate(segs):
-            bobot = 1.0 if kidx is None else (pre if j < kidx else post)
-            skor_seg, neg_until = 0.0, -1
-            for i, t in enumerate(seg):
-                if t in KATA_NEGASI:
-                    neg_until = i + window
-                    continue
-                if t in P:
-                    w = P[t]
-                elif t in N:
-                    w = -abs(N[t])
-                else:
-                    continue
-                skor_seg += neg_faktor * w if i <= neg_until else w
-            if skor_seg > 0:
-                ada_pos = True
-            elif skor_seg < 0:
-                ada_neg = True
-            total += bobot * skor_seg
-    label = 'positif' if total > 0 else ('negatif' if total < 0 else 'netral')
-    return label, total, ada_kontras, (ada_pos and ada_neg)
+    """Aturan v3 (dipakai). Mengembalikan (label, skor, ada_kontras, campuran)."""
+    return si.label_klausa(kalimat_list,
+                           pos_dict if pdict is None else pdict,
+                           neg_dict if ndict is None else ndict,
+                           neg_faktor, pre, post, window)
+
+
+def clean_post_stem(tokens: list) -> str:
+    """Praproses TAHAP 2: stopword selektif -> filter panjang >= 4 -> stemming ECS."""
+    return si.clean_post_stem(tokens, stop_words, fast_stem)
 
 
 def jelaskan_komentar(teks: str):
@@ -504,8 +268,12 @@ def jelaskan_komentar(teks: str):
                     w = -abs(neg_dict[t])
                 else:
                     if t in POS_RAW or t in NEG_RAW:
-                        alasan_ = ("kata tugas dibuang dari kamus" if t in KATA_TUGAS_DIBUANG
-                                   else f"aturan overlap='{OVERLAP_RULE}'")
+                        if t in KATA_TUGAS_DIBUANG:
+                            alasan_ = "kata tugas dibuang dari kamus"
+                        elif t in KAMUS['koreksi']:
+                            alasan_ = "koreksi domain (bobot 0)"
+                        else:
+                            alasan_ = f"aturan overlap='{OVERLAP_RULE}'"
                         print(f"     [{i}] {t:<12} DIABAIKAN (kamus asli: pos={POS_RAW.get(t)}, "
                               f"neg={NEG_RAW.get(t)}; {alasan_})")
                     continue
@@ -516,7 +284,7 @@ def jelaskan_komentar(teks: str):
     print(f"  TOTAL = {skor_total:+.2f}")
 
 
-# Mode diagnosis cepat:  python main_v4.py --jelaskan "teks komentar" ["teks lain" ...]
+# Mode diagnosis cepat:  python main.py --jelaskan "teks komentar" ["teks lain" ...]
 if '--jelaskan' in sys.argv:
     for teks_ in sys.argv[sys.argv.index('--jelaskan') + 1:]:
         jelaskan_komentar(teks_)

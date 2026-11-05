@@ -1,0 +1,6 @@
+aturan_overlap,persen_positif,persen_negatif,persen_netral,kappa_vs_aturan_aktif
+positif,40.1447,36.4014,23.4539,0.8414
+negatif,22.2423,54.6655,23.0922,0.7659
+maks_abs,32.1338,42.5678,25.2984,1.0000
+jumlah,31.3201,43.6890,24.9910,0.9391
+abaikan,26.3653,42.2966,31.3382,0.8001

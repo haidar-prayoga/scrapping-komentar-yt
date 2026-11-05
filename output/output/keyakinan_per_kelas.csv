@@ -1,7 +1,7 @@
 model,kelas_prediksi,n,confidence_rata2,akurasi_pada_kelas
-Naive Bayes,negatif,125,0.558483,0.672000
-Naive Bayes,netral,1,0.440787,0.000000
-Naive Bayes,positif,981,0.674301,0.592253
-Random Forest,negatif,367,0.588438,0.525886
-Random Forest,netral,217,0.695428,0.290323
-Random Forest,positif,523,0.615598,0.724665
+Naive Bayes,negatif,795,0.563127,0.525786
+Naive Bayes,netral,72,0.446386,0.638889
+Naive Bayes,positif,239,0.530981,0.702929
+Random Forest,negatif,491,0.613981,0.678208
+Random Forest,netral,386,0.675069,0.533679
+Random Forest,positif,229,0.631826,0.716157

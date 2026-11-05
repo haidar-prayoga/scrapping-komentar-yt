@@ -1,6 +1,7 @@
 youtube-comment-downloader
 pandas
 numpy
+scipy
 scikit-learn
 PySastrawi
 matplotlib
@@ -10,3 +11,5 @@ tqdm
 setuptools
 streamlit
 pillow
+# opsional: metadata video (ambil_metadata_video.py)
+yt-dlp

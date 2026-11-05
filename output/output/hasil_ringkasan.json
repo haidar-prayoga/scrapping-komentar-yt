@@ -3,9 +3,16 @@
     "positif": 3609,
     "negatif": 6579,
     "overlap": 1135,
-    "entri_kurang_4_huruf": 187
+    "entri_kurang_4_huruf": 187,
+    "kata_tugas_dibuang": 181,
+    "aturan_overlap": "maks_abs",
+    "aktif_positif": 2732,
+    "aktif_negatif": 5836,
+    "faktor_negasi": -0.74,
+    "kontras_pre": 0.5,
+    "kontras_post": 1.5
   },
-  "koreksi_domain": 0,
+  "koreksi_domain": 126,
   "sumber": {
     "video": 13
   },
@@ -13,65 +20,102 @@
     "raw": 5733,
     "setelah_buang_kosong": 5733,
     "setelah_dedup": 5632,
-    "bersih": 5531,
+    "bersih": 5530,
     "distribusi": {
-      "positif": 3051,
-      "negatif": 1884,
-      "netral": 596
+      "negatif": 2354,
+      "positif": 1777,
+      "netral": 1399
     },
     "distribusi_persen": {
-      "positif": 55.16,
-      "negatif": 34.06,
-      "netral": 10.78
+      "negatif": 42.57,
+      "positif": 32.13,
+      "netral": 25.3
     },
-    "cakupan_leksikon_persen": 92.15,
-    "netral_tanpa_kata_cocok": 434,
-    "netral_skor_saling_meniadakan": 162
+    "cakupan_leksikon_persen": 77.02,
+    "netral_tanpa_kata_cocok": 1271,
+    "netral_skor_saling_meniadakan": 128
   },
+  "sensitivitas_overlap_label": [
+    {
+      "aturan_overlap": "positif",
+      "persen_positif": 40.14466546112116,
+      "persen_negatif": 36.40144665461121,
+      "persen_netral": 23.453887884267633,
+      "kappa_vs_aturan_aktif": 0.8413930688639638
+    },
+    {
+      "aturan_overlap": "negatif",
+      "persen_positif": 22.24231464737794,
+      "persen_negatif": 54.66546112115732,
+      "persen_netral": 23.09222423146474,
+      "kappa_vs_aturan_aktif": 0.7659487418895192
+    },
+    {
+      "aturan_overlap": "maks_abs",
+      "persen_positif": 32.13381555153707,
+      "persen_negatif": 42.56781193490054,
+      "persen_netral": 25.298372513562388,
+      "kappa_vs_aturan_aktif": 1.0
+    },
+    {
+      "aturan_overlap": "jumlah",
+      "persen_positif": 31.320072332730557,
+      "persen_negatif": 43.68896925858951,
+      "persen_netral": 24.990958408679926,
+      "kappa_vs_aturan_aktif": 0.9390885048696705
+    },
+    {
+      "aturan_overlap": "abaikan",
+      "persen_positif": 26.365280289330922,
+      "persen_negatif": 42.29656419529837,
+      "persen_netral": 31.3381555153707,
+      "kappa_vs_aturan_aktif": 0.8001327147687829
+    }
+  ],
   "ablasi_label": {
     "mode_aktif": "klausa",
-    "persen_berubah": 3.54,
-    "kappa_antar_aturan": 0.9380628762852123,
-    "persen_kontras": 11.55,
-    "persen_campuran": 32.49,
+    "persen_berubah": 3.18,
+    "kappa_antar_aturan": 0.9512760402951873,
+    "persen_kontras": 12.01,
+    "persen_campuran": 21.86,
     "persen_fokus_kreator_per_label": {
-      "negatif": 2.97,
-      "netral": 2.35,
-      "positif": 7.47
+      "negatif": 3.44,
+      "netral": 2.5,
+      "positif": 10.24
     }
   },
   "split": {
     "latih": 4424,
-    "uji": 1107,
+    "uji": 1106,
     "fitur": 5000
   },
   "metrik": {
     "Naive Bayes": {
-      "Akurasi": 0.6007226738934056,
-      "Precision_macro": 0.4214176010873259,
-      "Recall_macro": 0.39123727825121807,
-      "F1_macro": 0.35485361735637017,
-      "Precision_weighted": 0.5557456755131602,
-      "Recall_weighted": 0.6007226738934056,
-      "F1_weighted": 0.516834619369571
+      "Akurasi": 0.5714285714285714,
+      "Precision_macro": 0.6225346409012628,
+      "Recall_macro": 0.5083328705424337,
+      "F1_macro": 0.4957892511210047,
+      "Precision_weighted": 0.6112784094590703,
+      "Recall_weighted": 0.5714285714285714,
+      "F1_weighted": 0.5289453848755546
     },
     "Random Forest": {
-      "Akurasi": 0.5736224028906955,
-      "Precision_macro": 0.513624510399225,
-      "Recall_macro": 0.553880901082144,
-      "F1_macro": 0.520749179799359,
-      "Precision_weighted": 0.6102780462293705,
-      "Recall_weighted": 0.5736224028906955,
-      "F1_weighted": 0.5859349781081964
+      "Akurasi": 0.635623869801085,
+      "Precision_macro": 0.6426812336747981,
+      "Recall_macro": 0.634897495375651,
+      "F1_macro": 0.6241900488475831,
+      "Precision_weighted": 0.6537990098441074,
+      "Recall_weighted": 0.635623869801085,
+      "F1_weighted": 0.631712204280264
     },
     "Naive Bayes (prior seragam)": {
-      "Akurasi": 0.6178861788617886,
-      "Precision_macro": 0.547789553759969,
-      "Recall_macro": 0.49975125215727695,
-      "F1_macro": 0.5126336953286899,
-      "Precision_weighted": 0.6032861736836073,
-      "Recall_weighted": 0.6178861788617886,
-      "F1_weighted": 0.6059815948117658
+      "Akurasi": 0.6075949367088608,
+      "Precision_macro": 0.6026355227846145,
+      "Recall_macro": 0.5780256201042063,
+      "F1_macro": 0.5826945450857832,
+      "Precision_weighted": 0.6051524927789669,
+      "Recall_weighted": 0.6075949367088608,
+      "F1_weighted": 0.5994024127547829
     }
   },
   "confusion_matrix": {
@@ -82,98 +126,138 @@
     ],
     "Naive Bayes": [
       [
-        84,
-        0,
-        293
-      ],
-      [
+        418,
         12,
-        0,
-        107
+        41
       ],
       [
-        29,
-        1,
-        581
+        204,
+        46,
+        30
+      ],
+      [
+        173,
+        14,
+        168
       ]
     ],
     "Random Forest": [
       [
-        193,
-        72,
-        112
+        333,
+        97,
+        41
       ],
       [
-        24,
-        63,
-        32
+        50,
+        206,
+        24
       ],
       [
-        150,
-        82,
-        379
+        108,
+        83,
+        164
       ]
     ],
     "Naive Bayes (prior seragam)": [
       [
-        194,
-        15,
-        168
-      ],
-      [
+        353,
         41,
-        27,
-        51
+        77
       ],
       [
-        127,
-        21,
-        463
+        111,
+        114,
+        55
+      ],
+      [
+        110,
+        40,
+        205
       ]
     ]
   },
   "cv": [
     {
       "model": "Naive Bayes",
-      "akurasi_mean": 0.6062407648848327,
-      "akurasi_std": 0.005780559594229626,
-      "f1_macro_mean": 0.3654586270982078,
-      "f1_macro_std": 0.007270625859359016
+      "akurasi_mean": 0.5574123782498658,
+      "akurasi_std": 0.010369964495966482,
+      "f1_macro_mean": 0.46516250235572765,
+      "f1_macro_std": 0.01689518441154393
     },
     {
       "model": "Random Forest",
-      "akurasi_mean": 0.5802497635299231,
-      "akurasi_std": 0.021100845934062182,
-      "f1_macro_mean": 0.5359789031560074,
-      "f1_macro_std": 0.024974090345474962
+      "akurasi_mean": 0.6317826009152031,
+      "akurasi_std": 0.012385188368181305,
+      "f1_macro_mean": 0.6227465236616012,
+      "f1_macro_std": 0.01284626105077149
     }
   ],
   "mcnemar": {
-    "b_hanya_NB_benar": 223,
-    "c_hanya_RF_benar": 193,
-    "chi2": 2.0216346153846154,
-    "p_chi2": 0.15507212969828824,
-    "p_exact": 0.15498774091701692,
-    "signifikan_alpha_0_05": false
+    "b_hanya_NB_benar": 150,
+    "c_hanya_RF_benar": 221,
+    "chi2": 13.20754716981132,
+    "p_chi2": 0.00027882404035203654,
+    "p_exact": 0.00026810590326439355,
+    "signifikan_alpha_0_05": true
+  },
+  "bootstrap_f1_macro": {
+    "RF_minus_NB": {
+      "rata2": 0.1283100033207263,
+      "ci95_bawah": 0.09407712121963142,
+      "ci95_atas": 0.1629873677231136,
+      "signifikan": true
+    },
+    "RF_minus_NB_prior_seragam": {
+      "rata2": 0.04095714466289586,
+      "ci95_bawah": 0.009343401755075387,
+      "ci95_atas": 0.07197314590835947,
+      "signifikan": true
+    }
   },
   "keyakinan": {
     "Naive Bayes": {
-      "akurasi": 0.6007226738934056,
-      "confidence_rata2": 0.6610118359408049,
-      "confidence_rata2_benar": 0.6937853059505997,
-      "confidence_rata2_salah": 0.6117033346817247,
-      "gap_overconfidence": 0.060289162047399314,
-      "brier_multiclass": 0.5027473504504325,
-      "ece_10bin": 0.07135552384023731
+      "akurasi": 0.5714285714285714,
+      "confidence_rata2": 0.5485807071602943,
+      "confidence_rata2_benar": 0.5904939193249333,
+      "confidence_rata2_salah": 0.492696424274109,
+      "gap_overconfidence": -0.022847864268277118,
+      "brier_multiclass": 0.5320522933705746,
+      "ece_10bin": 0.05996621738408516
     },
     "Random Forest": {
-      "akurasi": 0.5736224028906955,
-      "confidence_rata2": 0.6222422049029145,
-      "confidence_rata2_benar": 0.6372257113928871,
-      "confidence_rata2_salah": 0.6020843095191588,
-      "gap_overconfidence": 0.04861980201221894,
-      "brier_multiclass": 0.5656051796803109,
-      "ece_10bin": 0.06872504298222654
+      "akurasi": 0.635623869801085,
+      "confidence_rata2": 0.6389955330927692,
+      "confidence_rata2_benar": 0.6707718487775103,
+      "confidence_rata2_salah": 0.5835643918362605,
+      "gap_overconfidence": 0.003371663291684257,
+      "brier_multiclass": 0.4997590616409686,
+      "ece_10bin": 0.031265336433767756
     }
+  },
+  "gold_standard": {
+    "n": 400,
+    "kappa_antar_anotator": 0.7359885343592065,
+    "kappa_leksikon_vs_konsensus": 0.5789081423514069,
+    "akurasi_leksikon_vs_gold": 0.7175,
+    "f1_macro_leksikon_vs_gold": 0.7143558162102792,
+    "akurasi_Naive Bayes_vs_gold": 0.4575,
+    "f1_macro_Naive Bayes_vs_gold": 0.41247721032724494,
+    "akurasi_Random Forest_vs_gold": 0.55,
+    "f1_macro_Random Forest_vs_gold": 0.544509678334494,
+    "akurasi_leksikon_baseline_vs_gold": 0.7225,
+    "f1_macro_leksikon_baseline_vs_gold": 0.7213655860272401,
+    "kappa_leksikon_baseline_vs_gold": 0.5857165517434428,
+    "akurasi_leksikon_klausa_vs_gold": 0.7175,
+    "f1_macro_leksikon_klausa_vs_gold": 0.7143558162102792,
+    "kappa_leksikon_klausa_vs_gold": 0.5789081423514069,
+    "target_distribusi": {
+      "ekonomi": 353,
+      "kreator": 34,
+      "lainnya": 13
+    },
+    "n_target_ekonomi": 353,
+    "f1_macro_leksikon_vs_gold_ekonomi": 0.7102649299234725,
+    "f1_macro_Naive Bayes_vs_gold_ekonomi": 0.41120454134914647,
+    "f1_macro_Random Forest_vs_gold_ekonomi": 0.5306868585460961
   }
 }

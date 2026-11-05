@@ -1,12 +1,12 @@
 """
 Mengambil metadata video YouTube (kanal, judul, tanggal unggah, penonton, jumlah komentar)
-untuk membuktikan kriteria seleksi video (mis. "video terbaru") dan menghitung jumlah kanal.
+untuk mendokumentasikan kriteria seleksi video dan menghitung jumlah kanal.
 
 Cara pakai:
   1. pip install yt-dlp
   2. Buat data/raw/daftar_video.txt : satu URL atau ID video per baris
   3. python ambil_metadata_video.py
-  -> data/raw/metadata_video.csv  (dibaca otomatis oleh main_v4.py)
+  -> data/raw/metadata_video.csv  (dibaca otomatis oleh main.py)
 
 CATATAN: skrip ini belum diuji pada jaringan YouTube di lingkungan penyusun.
 Jika yt-dlp gagal, isi metadata_video.csv secara manual dengan kolom:

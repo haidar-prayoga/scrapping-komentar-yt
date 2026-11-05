@@ -1,0 +1,14 @@
+# Daftar video sumber komentar (satu URL per baris)
+https://www.youtube.com/watch?v=j-mZRs8oqzk
+https://www.youtube.com/watch?v=sGgYsNt2ick
+https://www.youtube.com/watch?v=O58TeizNUGE
+https://www.youtube.com/watch?v=BSOTnWje934
+https://www.youtube.com/watch?v=m_rzL-6QMRA
+https://www.youtube.com/watch?v=c4WS4nTwHqc
+https://www.youtube.com/watch?v=7-LqRczn3eI
+https://www.youtube.com/watch?v=5GVMCYfYA_Y
+https://www.youtube.com/watch?v=vm3zigqtCdQ
+https://www.youtube.com/watch?v=0FyPSAFQ4bg
+https://www.youtube.com/watch?v=TY0JsjLilVY
+https://www.youtube.com/watch?v=xrzhniNhZEs
+https://www.youtube.com/watch?v=69oftXMp9-s

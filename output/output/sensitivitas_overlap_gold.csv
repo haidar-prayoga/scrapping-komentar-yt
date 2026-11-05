@@ -1,0 +1,6 @@
+aturan_overlap,akurasi_vs_gold,f1_macro_vs_gold,kappa_vs_gold
+positif,0.637500,0.634967,0.461547
+negatif,0.612500,0.601014,0.421102
+maks_abs,0.717500,0.714356,0.578908
+jumlah,0.710000,0.707235,0.567572
+abaikan,0.662500,0.660850,0.493889
