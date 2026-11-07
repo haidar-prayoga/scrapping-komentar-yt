@@ -16,6 +16,12 @@
   "sumber": {
     "video": 13
   },
+  "video": {
+    "jumlah_video": 13,
+    "jumlah_kanal": 13,
+    "tanggal_unggah_terlama": "2026-04-08",
+    "tanggal_unggah_terbaru": "2026-06-07"
+  },
   "data": {
     "raw": 5733,
     "setelah_buang_kosong": 5733,
@@ -236,28 +242,28 @@
   },
   "gold_standard": {
     "n": 400,
-    "kappa_antar_anotator": 0.7359885343592065,
-    "kappa_leksikon_vs_konsensus": 0.5789081423514069,
-    "akurasi_leksikon_vs_gold": 0.7175,
-    "f1_macro_leksikon_vs_gold": 0.7143558162102792,
-    "akurasi_Naive Bayes_vs_gold": 0.4575,
-    "f1_macro_Naive Bayes_vs_gold": 0.41247721032724494,
+    "kappa_antar_anotator": 0.7437805555817218,
+    "kappa_leksikon_vs_konsensus": 0.5456238361266295,
+    "akurasi_leksikon_vs_gold": 0.695,
+    "f1_macro_leksikon_vs_gold": 0.6914975307281012,
+    "akurasi_Naive Bayes_vs_gold": 0.4475,
+    "f1_macro_Naive Bayes_vs_gold": 0.4017556125038923,
     "akurasi_Random Forest_vs_gold": 0.55,
-    "f1_macro_Random Forest_vs_gold": 0.544509678334494,
-    "akurasi_leksikon_baseline_vs_gold": 0.7225,
-    "f1_macro_leksikon_baseline_vs_gold": 0.7213655860272401,
-    "kappa_leksikon_baseline_vs_gold": 0.5857165517434428,
-    "akurasi_leksikon_klausa_vs_gold": 0.7175,
-    "f1_macro_leksikon_klausa_vs_gold": 0.7143558162102792,
-    "kappa_leksikon_klausa_vs_gold": 0.5789081423514069,
+    "f1_macro_Random Forest_vs_gold": 0.5425116125037427,
+    "akurasi_leksikon_baseline_vs_gold": 0.7,
+    "f1_macro_leksikon_baseline_vs_gold": 0.6983399209486166,
+    "kappa_leksikon_baseline_vs_gold": 0.5522262749890389,
+    "akurasi_leksikon_klausa_vs_gold": 0.695,
+    "f1_macro_leksikon_klausa_vs_gold": 0.6914975307281012,
+    "kappa_leksikon_klausa_vs_gold": 0.5456238361266295,
     "target_distribusi": {
       "ekonomi": 353,
       "kreator": 34,
       "lainnya": 13
     },
     "n_target_ekonomi": 353,
-    "f1_macro_leksikon_vs_gold_ekonomi": 0.7102649299234725,
-    "f1_macro_Naive Bayes_vs_gold_ekonomi": 0.41120454134914647,
-    "f1_macro_Random Forest_vs_gold_ekonomi": 0.5306868585460961
+    "f1_macro_leksikon_vs_gold_ekonomi": 0.6933297301529135,
+    "f1_macro_Naive Bayes_vs_gold_ekonomi": 0.40467576769729563,
+    "f1_macro_Random Forest_vs_gold_ekonomi": 0.5319446258325715
   }
 }
