@@ -29,7 +29,7 @@ if not os.path.exists(IN_TXT):
     sys.exit(f"Buat dulu {IN_TXT} (satu URL/ID per baris)")
 
 with open(IN_TXT, encoding='utf-8') as f:
-    daftar = [x.strip() for x in f if x.strip()]
+    daftar = [x.strip() for x in f if x.strip() and not x.strip().startswith('#')]
 
 rows = []
 with YoutubeDL({'quiet': True, 'skip_download': True, 'no_warnings': True}) as ydl:
